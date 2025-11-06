@@ -7,23 +7,45 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Comparator; 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
 
 /**
- * A simple single-file Tower Defense Simulator.
- * This class contains all components: the main window, game panel,
- * controls, and game logic classes (Enemy, Tower, Projectile).
+ Ts is a single file TDS gaem made by egor for """""educational purposes""""" (yk when you see 'educationl purposes' you ARE redeemed to find a sigma trollface edit ts tuff).
+ this version features A boss (his name is terry)
+ 2x speed and a detailed tower info panel.
+ and also uh, targeting modes for towers.
+ yea enjoy coding and not touching grass for once.
+
+
+    -------THIS IS VERSION 1.2 -------
+    -----YES I SKIPPED A VERSION------
+ --BUT GENUINELY WHO CARES ABOUT VERSIONING--
+ 
+
+ ------------------------------------ made by egor/undefined/nftc/sortl or however u know me ---- but i lowk use egor
+ ---------only yogur and kos can call me sortl :victory_pose: ----------
  */
-@SuppressWarnings("serial")
+
 public class TowerDefence extends JFrame {
 
+    // --- NEW: TARGETING MODES ---
+    public static final String NEAREST = "Nearest";
+    public static final String FARTHEST = "Farthest";
+    public static final String STRONGEST = "Strongest"; // Targets highest current HP
+    // -----------------------
+
     private GamePanel gamePanel;
-    private ControlPanel controlPanel;
-    private StartScreenPanel startScreenPanel; // NEW: Start Screen
-    private Timer gameLoop;
+    private final ControlPanel controlPanel;
+    private final StartScreenPanel startScreenPanel; 
+    private final Timer gameLoop;
     
-    // --- NEW GAME STATE ---
+    // --- GAME STATE ---
     private double GAME_SPEED_MULTIPLIER = 1.0; 
     // ----------------------
 
@@ -32,7 +54,7 @@ public class TowerDefence extends JFrame {
     private int playerMoney = 750;
     private int waveNumber = 0;
     
-    // Updated tower placing logic: Added Mortar, Slow, Farm, Beacon
+    // Tower placing logic
     private String placingTowerType = "NONE"; 
     
     // Tower Types
@@ -40,22 +62,30 @@ public class TowerDefence extends JFrame {
     private static final String SNIPER = "SNIPER";
     private static final String MG = "MG";
     private static final String INFERNO = "INFERNO";
+    private static final String LASER = "LASER";
     private static final String MORTAR = "MORTAR";
+    private static final String BOMB = "BOMB";
     private static final String SLOW = "SLOW";
     private static final String FARM = "FARM";
-    private static final String BEACON = "BEACON"; // NEW
+    private static final String BEACON = "BEACON"; 
     
     // Enemy Types (for spawning logic)
     private static final String BASIC_ENEMY = "BASIC_ENEMY";
     private static final String ARMORED_ENEMY = "ARMORED_ENEMY";
     private static final String SHIELDED_ENEMY = "SHIELDED_ENEMY";
     private static final String TELEPORTER_ENEMY = "TELEPORTER_ENEMY";
+    private static final String BOSS_ENEMY_TYPE = "BOSS"; // NEW BOSS TYPE (his name is terry)
+
+    // Boss configuration
+    private static final int BOSS_WAVE_FREQUENCY = 20; // Boss Spawns every "X" waves (Like how much you set it to)
     
     // Game element lists
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Tower> towers = new ArrayList<>();
     private final List<Projectile> projectiles = new ArrayList<>();
-    private Tower selectedTower = null; // For sell/upgrade actions
+    
+    // This now holds the tower selected by right-click for detail panel updates
+    private Tower selectedTower = null; 
 
     // Path for enemies (a simple list of waypoints)
     private Path path;
@@ -76,7 +106,7 @@ public class TowerDefence extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int controlPanelWidth = 180; // Increased width for more buttons
+        int controlPanelWidth = 200; // Increased width for detail panel
         int gamePanelHeight = screenSize.height;
         int gamePanelWidth = screenSize.width - controlPanelWidth;
 
@@ -96,7 +126,7 @@ public class TowerDefence extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
 
-        // Initialize Timer but DO NOT start it yet
+        // Initialize Timer but DONT. DO NOT start it yet
         gameLoop = new Timer(16, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -106,7 +136,7 @@ public class TowerDefence extends JFrame {
         });
     }
     
-    /** * NEW METHOD: Transitions from the start screen to the main game.
+    /** * Transitions from start screen to the game
      */
     public void startGame() {
         // 1. Remove the start screen
@@ -125,6 +155,8 @@ public class TowerDefence extends JFrame {
         
         // Ensure labels are up to date
         controlPanel.updateLabels();
+
+        //And yeh its done.
     }
     
     public double getGameSpeedMultiplier() {
@@ -134,10 +166,10 @@ public class TowerDefence extends JFrame {
     private void toggleGameSpeed() {
         if (GAME_SPEED_MULTIPLIER == 1.0) {
             GAME_SPEED_MULTIPLIER = 2.0;
-            controlPanel.fastForwardButton.setText("Speed: 2x (ON)");
+            controlPanel.fastForwardButton.setText(">>");
         } else {
             GAME_SPEED_MULTIPLIER = 1.0;
-            controlPanel.fastForwardButton.setText("Speed: 1x (OFF)");
+            controlPanel.fastForwardButton.setText(">");
         }
         // When speed changes, restart the wave timer immediately to apply speed change
         if (controlPanel.waveTimer != null && controlPanel.waveTimer.isRunning()) {
@@ -146,12 +178,12 @@ public class TowerDefence extends JFrame {
     }
 
     /**
-     * The main game logic update method, called by the Timer.
+     * The main game logic update method, timer calls ts every tick.
      */
     private void updateGame() {
         if (playerLives <= 0) {
             gameLoop.stop();
-            JOptionPane.showMessageDialog(this, "Game Over! You reached wave " + waveNumber, "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "GGs! You got to " + waveNumber, "Game over.", JOptionPane.INFORMATION_MESSAGE);
             System.exit(0);
         }
 
@@ -183,10 +215,15 @@ public class TowerDefence extends JFrame {
                 continue;
             }
             
-            // Check if the projectile has hit its target
+            // Check if projectile target is dead 
+            if (p.target != null && p.target.isDead()) {
+                 projectileIterator.remove(); // remove projectile if dead
+                 continue;
+            }
+            
             if (p.hasHitTarget()) {
-                if (p instanceof MortarProjectile) {
-                    ((MortarProjectile)p).applyExplosionDamage(enemies);
+                if (p instanceof MortarProjectile mortarProjectile) {
+                    mortarProjectile.applyExplosionDamage(enemies);
                 } else {
                     p.target.takeDamage(p.damage);
                 }
@@ -201,7 +238,7 @@ public class TowerDefence extends JFrame {
             }
         }
         
-        // Remove dead enemies outside of projectile loop (for constant damage like Inferno)
+        // Remove dead enemies outside of projectile loop (usually used for Inferno and Laser)
         enemies.removeIf(enemy -> {
             if (enemy.isDead()) {
                 playerMoney += enemy.bounty;
@@ -222,13 +259,30 @@ public class TowerDefence extends JFrame {
     }
 
     /**
-     * Spawns a new wave of enemies.
+     * Spawns a new wave of enemies, including a boss every "X" wave.
      */
     private void spawnWave() {
+
+        controlPanel.hideTowerDetails();
+        selectedTower = null;
+        
         waveNumber++;
         controlPanel.waveInProgress = true;
         controlPanel.startWaveButton.setEnabled(false);
         controlPanel.updateLabels();
+        
+        // --- BOSS WAVE CHECK ---
+        if (waveNumber % BOSS_WAVE_FREQUENCY == 0) {
+            // Only spawn the boss on boss waves
+            enemies.add(new BossEnemy(path, waveNumber / BOSS_WAVE_FREQUENCY));
+            
+            // Use a dummy timer to satisfy existing logic until wave is cleared
+            controlPanel.waveTimer = new Timer(1, null); 
+            controlPanel.waveTimer.setRepeats(false); 
+            controlPanel.waveTimer.start(); 
+            return;
+        }
+        // --- END BOSS WAVE CHECK ---
 
         final int enemiesToSpawn = 5 + waveNumber * 2;
         final int baseHealth = 100 + waveNumber * 15;
@@ -332,17 +386,24 @@ public class TowerDefence extends JFrame {
                     if (!placingTowerType.equals("NONE")) {
                         handleTowerPlacement(x, y);
                     } else if (e.getButton() == MouseEvent.BUTTON3) {
-                        // Right-click to sell tower
-                        handleTowerRightClick(x, y, e);
+                        // Right-click to select tower and show details
+                        handleTowerRightClick(x, y);
+                    } else if (e.getButton() == MouseEvent.BUTTON1) {
+                        // Left-click to deselect if not placing
+                         controlPanel.hideTowerDetails();
+                         selectedTower = null;
+                         repaint();
                     }
                 }
             };
             addMouseListener(mouseHandler);
+            addMouseMotionListener(mouseHandler); // For placement preview
         }
         
         /** Handles tower placement logic. */
         private void handleTowerPlacement(int x, int y) {
             if (!isLocationValid(x, y)) {
+                 // Using JOptionPane as we are in a Swing application
                  JOptionPane.showMessageDialog(this, "Cannot place tower on path!", "Error", JOptionPane.ERROR_MESSAGE);
                  return;
             }
@@ -355,7 +416,9 @@ public class TowerDefence extends JFrame {
                 case SNIPER -> { newTower = new SniperTower(x, y); cost = SniperTower.COST; }
                 case MG -> { newTower = new MachineGunTower(x, y); cost = MachineGunTower.COST; }
                 case INFERNO -> { newTower = new InfernoTower(x, y); cost = InfernoTower.COST; }
+                case LASER -> { newTower = new LaserBeamer(x, y); cost = LaserBeamer.COST; }
                 case MORTAR -> { newTower = new MortarTower(x, y); cost = MortarTower.COST; }
+                case BOMB -> { newTower = new BombTower(x, y); cost = BombTower.COST; }
                 case SLOW -> { newTower = new SlowTower(x, y); cost = SlowTower.COST; }
                 case FARM -> { newTower = new MoneyFarm(x, y); cost = MoneyFarm.COST; }
                 case BEACON -> { newTower = new BeaconTower(x, y); cost = BeaconTower.COST; }
@@ -366,7 +429,7 @@ public class TowerDefence extends JFrame {
                     towers.add(newTower);
                     playerMoney -= cost;
                 } else {
-                    JOptionPane.showMessageDialog(this, "Not enough money! Cost: $" + cost, "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Not enough money! Cost: $" + cost, "Error", JOptionPane.INFORMATION_MESSAGE);
                     return; 
                 }
             }
@@ -375,10 +438,11 @@ public class TowerDefence extends JFrame {
             placingTowerType = "NONE";
             controlPanel.resetButtons();
             controlPanel.updateLabels();
+            repaint();
         }
         
-        /** Handles right-click to select and sell tower. */
-        private void handleTowerRightClick(int x, int y, MouseEvent e) {
+        /** Handles right-click to select a tower and show its details in the control panel. */
+        private void handleTowerRightClick(int x, int y) {
             selectedTower = null;
             for (Tower tower : towers) {
                 double distance = Point2D.distance(x, y, tower.x, tower.y);
@@ -389,35 +453,17 @@ public class TowerDefence extends JFrame {
             }
 
             if (selectedTower != null) {
-                JPopupMenu popup = new JPopupMenu();
-                
-                // Sell Option
-                int sellValue = (int) (selectedTower.getCost() * 0.75);
-                JMenuItem sellItem = new JMenuItem("Sell ($" + sellValue + ")");
-                sellItem.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent event) {
-                        playerMoney += sellValue;
-                        towers.remove(selectedTower);
-                        selectedTower = null;
-                        controlPanel.updateLabels();
-                        repaint();
-                    }
-                });
-                popup.add(sellItem);
-                
-                // Show info (simplified)
-                JMenuItem infoItem = new JMenuItem(selectedTower.getClass().getSimpleName() + " - Dmg: " + selectedTower.damage);
-                infoItem.setEnabled(false);
-                popup.add(infoItem);
-                
-                popup.show(e.getComponent(), e.getX(), e.getY());
+                 controlPanel.showTowerDetails(selectedTower);
+            } else {
+                 controlPanel.hideTowerDetails();
             }
+            repaint();
         }
 
         private boolean isLocationValid(int x, int y) {
             int pathProximity = 25; 
             
+            // Check proximity to path
             for (int i = 0; i < path.points.size() - 1; i++) {
                 Point p1 = path.points.get(i);
                 Point p2 = path.points.get(i+1);
@@ -442,6 +488,14 @@ public class TowerDefence extends JFrame {
                     }
                 }
             }
+            
+            // NEW: Check proximity to other towers
+            for (Tower tower : towers) {
+                if (Point2D.distance(x, y, tower.x, tower.y) < 30) { // 30px buffer
+                    return false;
+                }
+            }
+            
             return true; 
         }
 
@@ -449,21 +503,24 @@ public class TowerDefence extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
+            // NEW: Enable antialiasing for smoother shapes
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             // 1. Draw the path
             path.draw(g2d);
 
             // 2. Draw Towers and their range
             for (Tower tower : towers) {
+                // NEW: Draw a colored ring around the selected tower
+                if (tower == selectedTower) {
+                    g2d.setColor(Color.YELLOW);
+                    g2d.setStroke(new BasicStroke(3));
+                    g2d.drawOval(tower.x - 15, tower.y - 15, 30, 30);
+                    g2d.setStroke(new BasicStroke(1));
+                }
                 tower.draw(g2d);
             }
             
-            // Highlight selected tower
-            if (selectedTower != null) {
-                g2d.setColor(Color.YELLOW);
-                g2d.drawRect(selectedTower.x - 15, selectedTower.y - 15, 30, 30);
-            }
-
             // 3. Draw Enemies
             for (Enemy enemy : new ArrayList<>(enemies)) {
                 enemy.draw(g2d);
@@ -488,7 +545,9 @@ public class TowerDefence extends JFrame {
                         case SNIPER -> { previewRange = SniperTower.RANGE; previewColor = Color.CYAN.darker(); towerCost = SniperTower.COST; }
                         case MG -> { previewRange = MachineGunTower.RANGE; previewColor = Color.DARK_GRAY; towerCost = MachineGunTower.COST; }
                         case INFERNO -> { previewRange = InfernoTower.RANGE; previewColor = Color.ORANGE; towerCost = InfernoTower.COST; }
+                        case LASER -> { previewRange = LaserBeamer.RANGE; previewColor = Color.BLUE; towerCost = LaserBeamer.COST; }
                         case MORTAR -> { previewRange = MortarTower.RANGE; previewColor = Color.GRAY; towerCost = MortarTower.COST; }
+                        case BOMB -> { previewRange = BombTower.RANGE; previewColor = Color.GRAY; towerCost = BombTower.COST; }
                         case SLOW -> { previewRange = SlowTower.RANGE; previewColor = Color.MAGENTA; towerCost = SlowTower.COST; }
                         case FARM -> { previewRange = MoneyFarm.RANGE; previewColor = Color.YELLOW; towerCost = MoneyFarm.COST; }
                         case BEACON -> { previewRange = BeaconTower.RANGE; previewColor = Color.MAGENTA; towerCost = BeaconTower.COST; }
@@ -526,22 +585,35 @@ public class TowerDefence extends JFrame {
         private final JButton buildSniperTowerButton;
         private final JButton buildMgTowerButton;
         private final JButton buildInfernoTowerButton; 
+        private final JButton buildLaserBeamerButton; 
         private final JButton buildMortarTowerButton; 
+        private final JButton buildBombTowerButton; 
         private final JButton buildSlowTowerButton;   
         private final JButton buildFarmTowerButton;   
         private final JButton buildBeaconTowerButton; 
-        
         private JButton cancelBuildButton;
+        
+        // --- NEW: Tower Details Panel Components ---
+        private JPanel towerDetailPanel;
+        private JLabel detailNameLabel;
+        private JLabel detailSellLabel;
+        private JComboBox<String> targetingDropdown;
+        private JButton sellButton;
         
         public boolean waveInProgress = false;
 
         public ControlPanel(int height) {
-            setPreferredSize(new Dimension(180, height));
-            setLayout(new GridLayout(20, 1, 5, 5)); 
-            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            setPreferredSize(new Dimension(200, height)); // Increased width
+            setLayout(new BorderLayout()); 
             setBackground(new Color(200, 200, 200));
+            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-            // --- Labels ---
+            // --- Top Panel (Status & Utility) ---
+            JPanel topPanel = new JPanel();
+            topPanel.setLayout(new GridLayout(7, 1, 5, 5));
+            topPanel.setBackground(new Color(220, 220, 220));
+            topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
+
             livesLabel = new JLabel("Lives: " + playerLives);
             livesLabel.setFont(new Font("Arial", Font.BOLD, 14));
             moneyLabel = new JLabel("Money: $" + playerMoney);
@@ -549,14 +621,24 @@ public class TowerDefence extends JFrame {
             waveLabel = new JLabel("Wave: " + waveNumber);
             waveLabel.setFont(new Font("Arial", Font.BOLD, 14));
 
-            // --- Utility Buttons ---
             startWaveButton = new JButton("Start Wave");
             startWaveButton.addActionListener(e -> spawnWave());
             
             fastForwardButton = new JButton("Speed: 1x (OFF)");
             fastForwardButton.addActionListener(e -> toggleGameSpeed());
 
-            // --- Build Tower Buttons ---
+            topPanel.add(new JLabel("--- STATUS ---"));
+            topPanel.add(livesLabel);
+            topPanel.add(moneyLabel);
+            topPanel.add(waveLabel);
+            topPanel.add(startWaveButton);
+            topPanel.add(fastForwardButton);
+            
+            // --- Center Panel (Build Buttons) ---
+            JPanel buildPanel = new JPanel();
+            buildPanel.setLayout(new GridLayout(14, 1, 5, 5));
+            buildPanel.setBackground(new Color(220, 220, 220));
+            
             buildBasicTowerButton = new JButton("TURRET ($" + BasicTower.COST + ")");
             buildBasicTowerButton.addActionListener(e -> { if (playerMoney >= BasicTower.COST) { placingTowerType = BASIC; toggleBuildButtons(false); } });
             
@@ -569,8 +651,14 @@ public class TowerDefence extends JFrame {
             buildInfernoTowerButton = new JButton("INFERNO ($" + InfernoTower.COST + ")");
             buildInfernoTowerButton.addActionListener(e -> { if (playerMoney >= InfernoTower.COST) { placingTowerType = INFERNO; toggleBuildButtons(false); } });
 
+            buildLaserBeamerButton = new JButton("LASER BEAM ($" + LaserBeamer.COST + ")");
+            buildLaserBeamerButton.addActionListener(e -> { if (playerMoney >= LaserBeamer.COST) { placingTowerType = LASER; toggleBuildButtons(false); } });
+
             buildMortarTowerButton = new JButton("MORTAR ($" + MortarTower.COST + ")");
             buildMortarTowerButton.addActionListener(e -> { if (playerMoney >= MortarTower.COST) { placingTowerType = MORTAR; toggleBuildButtons(false); } });
+            
+            buildBombTowerButton = new JButton("BOMB ($" + BombTower.COST + ")");
+            buildBombTowerButton.addActionListener(e -> { if (playerMoney >= BombTower.COST) { placingTowerType = BOMB; toggleBuildButtons(false); } });
             
             buildSlowTowerButton = new JButton("SLOWER ($" + SlowTower.COST + ")");
             buildSlowTowerButton.addActionListener(e -> { if (playerMoney >= SlowTower.COST) { placingTowerType = SLOW; toggleBuildButtons(false); } });
@@ -585,26 +673,101 @@ public class TowerDefence extends JFrame {
             cancelBuildButton.addActionListener(e -> resetButtons());
             cancelBuildButton.setEnabled(false); 
             
-            // Add components to panel
-            add(new JLabel("--- STATUS ---"));
-            add(livesLabel);
-            add(moneyLabel);
-            add(waveLabel);
-            add(new JSeparator());
-            add(startWaveButton);
-            add(fastForwardButton);
-            add(new JSeparator());
-            add(new JLabel("--- TOWERS ---"));
-            add(buildBasicTowerButton);
-            add(buildSniperTowerButton);
-            add(buildMgTowerButton);
-            add(buildInfernoTowerButton);
-            add(buildMortarTowerButton);
-            add(buildSlowTowerButton);
-            add(buildFarmTowerButton);
-            add(buildBeaconTowerButton);
-            add(cancelBuildButton);
+            buildPanel.add(new JLabel("--- BUILD TOWERS ---"));
+            buildPanel.add(buildBasicTowerButton);
+            buildPanel.add(buildSniperTowerButton);
+            buildPanel.add(buildMgTowerButton);
+            buildPanel.add(buildInfernoTowerButton);
+            buildPanel.add(buildLaserBeamerButton);
+            buildPanel.add(buildMortarTowerButton);
+            buildPanel.add(buildBombTowerButton);
+            buildPanel.add(buildSlowTowerButton);
+            buildPanel.add(buildFarmTowerButton);
+            buildPanel.add(buildBeaconTowerButton);
+            buildPanel.add(cancelBuildButton);
+            
+            // --- NEW: Bottom Panel (Tower Details) ---
+            towerDetailPanel = new JPanel();
+            towerDetailPanel.setLayout(new BoxLayout(towerDetailPanel, BoxLayout.Y_AXIS));
+            towerDetailPanel.setBorder(BorderFactory.createTitledBorder("Tower Details"));
+            towerDetailPanel.setBackground(new Color(180, 180, 180));
+            towerDetailPanel.setVisible(false); // Hidden by default
+            
+            detailNameLabel = new JLabel("Tower: ");
+            detailNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            detailSellLabel = new JLabel("Sell for: ");
+            detailSellLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            sellButton = new JButton("SELL");
+            sellButton.addActionListener(e -> sellSelectedTower());
+            sellButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Targeting Dropdown
+            targetingDropdown = new JComboBox<>(new String[]{NEAREST, FARTHEST, STRONGEST});
+            targetingDropdown.addActionListener(e -> changeTargetingMode());
+            targetingDropdown.setMaximumSize(new Dimension(150, 30));
+            
+            towerDetailPanel.add(Box.createVerticalStrut(10));
+            towerDetailPanel.add(detailNameLabel);
+            towerDetailPanel.add(Box.createVerticalStrut(10));
+            towerDetailPanel.add(new JLabel("Targeting Priority:"));
+            towerDetailPanel.add(targetingDropdown);
+            towerDetailPanel.add(Box.createVerticalStrut(10));
+            towerDetailPanel.add(detailSellLabel);
+            towerDetailPanel.add(sellButton);
+            towerDetailPanel.add(Box.createVerticalGlue());
+
+            // Add all panels to the control panel layout
+            add(topPanel, BorderLayout.NORTH);
+            add(buildPanel, BorderLayout.CENTER);
+            add(towerDetailPanel, BorderLayout.SOUTH);
         }
+        
+        /** NEW: Shows the detail panel for the selected tower. */
+        public void showTowerDetails(Tower tower) {
+            if (tower == null) return;
+            
+            int sellValue = (int) (tower.getCost() * 0.75);
+            
+            detailNameLabel.setText("Tower: " + tower.getClass().getSimpleName());
+            detailSellLabel.setText("Sell for: $" + sellValue);
+            sellButton.setText("SELL ($" + sellValue + ")");
+            
+            // Set the dropdown to the tower's current targeting mode
+            targetingDropdown.setSelectedItem(tower.getTargetingMode());
+            
+            towerDetailPanel.setVisible(true);
+            
+            // Disable targeting for income/utility towers
+            targetingDropdown.setEnabled(tower.damage > 0 || tower instanceof SlowTower);
+        }
+        
+        /** NEW: Hides the detail panel. */
+        public void hideTowerDetails() {
+            towerDetailPanel.setVisible(false);
+        }
+        
+        /** NEW: Sells the currently selected tower. */
+        private void sellSelectedTower() {
+            if (selectedTower != null) {
+                int sellValue = (int) (selectedTower.getCost() * 0.75);
+                playerMoney += sellValue;
+                towers.remove(selectedTower);
+                selectedTower = null;
+                hideTowerDetails();
+                updateLabels();
+                gamePanel.repaint();
+            }
+        }
+        
+        /** NEW: Changes the targeting mode for the selected tower. */
+        private void changeTargetingMode() {
+            if (selectedTower != null && targetingDropdown.isEnabled()) {
+                String mode = (String) targetingDropdown.getSelectedItem();
+                selectedTower.setTargetingMode(mode);
+            }
+        }
+
 
         /** Disables/Enables build buttons and cancel button */
         private void toggleBuildButtons(boolean enableBuild) {
@@ -612,7 +775,9 @@ public class TowerDefence extends JFrame {
             buildSniperTowerButton.setEnabled(enableBuild);
             buildMgTowerButton.setEnabled(enableBuild);
             buildInfernoTowerButton.setEnabled(enableBuild);
+            buildLaserBeamerButton.setEnabled(enableBuild);
             buildMortarTowerButton.setEnabled(enableBuild);
+            buildBombTowerButton.setEnabled(enableBuild);
             buildSlowTowerButton.setEnabled(enableBuild);
             buildFarmTowerButton.setEnabled(enableBuild);
             buildBeaconTowerButton.setEnabled(enableBuild);
@@ -628,23 +793,35 @@ public class TowerDefence extends JFrame {
         /** Updates the text on the status labels. */
         public void updateLabels() {
             livesLabel.setText("Lives: " + playerLives);
+            
+            // NEW: Highlight boss wave for player awareness
+            if (waveNumber > 0 && waveNumber % BOSS_WAVE_FREQUENCY == 0 && !enemies.isEmpty()) {
+                 waveLabel.setText("Wave: BOSS (" + waveNumber + ")");
+            } else {
+                 waveLabel.setText("Wave: " + waveNumber);
+            }
             moneyLabel.setText("Money: $" + playerMoney);
-            waveLabel.setText("Wave: " + waveNumber);
         }
     }
 
     /** Defines the path enemies follow. */
-    class Path {
+    final class Path {
         List<Point> points = new ArrayList<>();
         
         public Path(int width, int height) {
-            // Simplified Path (similar to user's relative path logic)
-            addPoint(0, (int)(height * 0.15)); 
-            addPoint((int)(width * 0.58), (int)(height * 0.15));
-            addPoint((int)(width * 0.58), (int)(height * 0.45));
-            addPoint((int)(width * 0.15), (int)(height * 0.45));
-            addPoint((int)(width * 0.15), (int)(height * 0.75));
-            addPoint(width, (int)(height * 0.75));
+            // Start at the top-left corner
+            addPoint(0, (int)(height * 0.10)); // Start at the top-left
+        
+            // Zigzag pattern across the screen
+            addPoint((int)(width * 0.20), (int)(height * 0.10)); // Move right
+            addPoint((int)(width * 0.20), (int)(height * 0.30)); // Move down
+            addPoint((int)(width * 0.40), (int)(height * 0.30)); // Move right
+            addPoint((int)(width * 0.40), (int)(height * 0.50)); // Move down
+            addPoint((int)(width * 0.60), (int)(height * 0.50)); // Move right
+            addPoint((int)(width * 0.60), (int)(height * 0.70)); // Move down
+            addPoint((int)(width * 0.80), (int)(height * 0.70)); // Move right
+            addPoint((int)(width * 0.80), (int)(height * 0.90)); // Move down
+            addPoint(width, (int)(height * 0.90)); // Move to the far-right edge
         }
 
         public void addPoint(int x, int y) {
@@ -652,6 +829,9 @@ public class TowerDefence extends JFrame {
         }
 
         public Point getPoint(int index) {
+            if (index < 0 || index >= points.size()) {
+                return points.get(points.size() - 1); // Return last point if out of bounds
+            }
             return points.get(index);
         }
 
@@ -660,7 +840,7 @@ public class TowerDefence extends JFrame {
         }
 
         public void draw(Graphics2D g2d) {
-            g2d.setColor(new Color(139, 69, 19, 150)); 
+            g2d.setColor(new Color(163, 163, 163)); 
             g2d.setStroke(new BasicStroke(30, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)); 
             for (int i = 0; i < points.size() - 1; i++) {
                 Point p1 = points.get(i);
@@ -681,6 +861,8 @@ public class TowerDefence extends JFrame {
         protected String type;
         
         private double x, y;
+
+        // Removed duplicate method definition
         protected int currentWaypoint = 0;
         private boolean reachedEnd = false;
         protected int maxHealth;
@@ -713,6 +895,8 @@ public class TowerDefence extends JFrame {
             } else if (type.equals(TELEPORTER_ENEMY)) {
                 this.color = new Color(255, 140, 0); 
                 this.teleportTimer = TELEPORT_COOLDOWN;
+            } else if (type.equals(BOSS_ENEMY_TYPE)) {
+                this.color = new Color(75, 0, 130); // Boss color, overwritten in subclass
             } else {
                 this.color = Color.RED;
             }
@@ -736,7 +920,7 @@ public class TowerDefence extends JFrame {
             if (this.type.equals(TELEPORTER_ENEMY)) {
                 this.teleportTimer -= (long)(16 * speedMultiplier);
                 if (this.teleportTimer <= 0) {
-                    currentWaypoint = Math.min(currentWaypoint + 3, path.getLength());
+                    currentWaypoint = Math.min(currentWaypoint + 3, path.getLength() - 1);
                     this.teleportTimer = TELEPORT_COOLDOWN; 
                 }
             }
@@ -798,6 +982,13 @@ public class TowerDefence extends JFrame {
         
         public double getX() { return x; }
         public double getY() { return y; }
+        
+        /** Helper for Farthest targeting: returns distance traveled *on the current waypoint* */
+        public double getDistanceOnWaypoint() {
+            if (currentWaypoint == 0) return 0;
+            Point p1 = path.getPoint(currentWaypoint - 1);
+            return Point2D.distance(p1.x, p1.y, x, y);
+        }
 
         public void draw(Graphics2D g2d) {
             // Body
@@ -834,6 +1025,70 @@ public class TowerDefence extends JFrame {
             }
         }
     }
+    
+    /** * NEW CLASS: Boss Enemy. 
+     * Huge HP, very slow, high damage resistance. 
+     */
+    class BossEnemy extends Enemy {
+        private static final int BOSS_DRAW_SIZE = 45; // Larger drawing size
+
+        public BossEnemy(Path path, int bossWaveLevel) {
+            // --- CUSTOMIZATION POINT ---
+            // Base Health: 1500 + 500 per boss wave
+            // Base Speed: 0.3 + 0.05 per boss wave (VERY SLOW)
+            // Base Bounty: 300 + 50 per boss wave (HUGE REWARD)
+            super(path, 
+                  5000 + bossWaveLevel * 500, 
+                  0.3 + bossWaveLevel * 0.05, 
+                  300 + bossWaveLevel * 50,    
+                  BOSS_ENEMY_TYPE); 
+
+            this.maxHealth = this.health;
+            this.color = new Color(75, 0, 130); // Dark Purple
+        }
+
+        @Override
+        public void takeDamage(int damage) {
+            if (isDead()) return;
+            
+            // --- CUSTOMIZATION POINT ---
+            // Boss takes 60% of damage, effectively giving it 40% resistance
+            double resistanceMultiplier = 0.60; 
+            
+            int finalDamage = (int) (damage * resistanceMultiplier);
+            
+            this.health -= Math.max(1, finalDamage);
+        }
+
+        @Override
+        public void draw(Graphics2D g2d) {
+            // Draw a much larger body
+            g2d.setColor(this.color);
+            g2d.fillOval((int)getX() - BOSS_DRAW_SIZE / 2, (int)getY() - BOSS_DRAW_SIZE / 2, BOSS_DRAW_SIZE, BOSS_DRAW_SIZE);
+            
+            // Draw a distinct pattern
+            g2d.setColor(Color.RED.darker());
+            g2d.drawRect((int)getX() - BOSS_DRAW_SIZE / 2, (int)getY() - BOSS_DRAW_SIZE / 2, BOSS_DRAW_SIZE, BOSS_DRAW_SIZE);
+            // Draw BOSS text
+            g2d.setFont(new Font("Arial", Font.BOLD, 14));
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("TERRY", (int)getX() - 16, (int)getY() + 5);
+
+            // Health bar (placed above the unit)
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.fillRect((int)getX() - BOSS_DRAW_SIZE / 2, (int)getY() - BOSS_DRAW_SIZE / 2 - 15, BOSS_DRAW_SIZE, 8);
+            g2d.setColor(Color.RED);
+            double healthPercent = (double)health / maxHealth;
+            g2d.fillRect((int)getX() - BOSS_DRAW_SIZE / 2, (int)getY() - BOSS_DRAW_SIZE / 2 - 15, (int)(BOSS_DRAW_SIZE * healthPercent), 8);
+        
+            // Draw slow indicator (if applicable)
+            if (System.currentTimeMillis() < slowEndTime) {
+                g2d.setColor(new Color(0, 150, 255)); // Cyan
+                g2d.fillOval((int)getX() - BOSS_DRAW_SIZE / 2 - 5, (int)getY() - BOSS_DRAW_SIZE / 2 - 5, 10, 10);
+            }
+        }
+    }
+
 
     /** Represents a base Tower class. */
     abstract class Tower {
@@ -845,11 +1100,29 @@ public class TowerDefence extends JFrame {
         protected Color color;
         protected Color attackColor;
         protected int cost; // Added cost for selling logic
+        
+        // --- NEW: TARGETING AND ROTATION ---
+        private String targetingMode = NEAREST; // Default
 
+        // Removed duplicate method definition
+        protected Enemy currentTarget = null;
+        protected double currentAngle = 0.0; // Angle in radians
+        // ----------------------------------
+        
         public Tower(int x, int y) {
             this.x = x;
             this.y = y;
         }
+        
+        // --- NEW: Targeting Mode Getters/Setters ---
+        public void setTargetingMode(String mode) {
+            this.targetingMode = mode;
+        }
+        
+        public String getTargetingMode() {
+            return targetingMode;
+        }
+        // -----------------------------------------
         
         public int getCost() {
             return cost;
@@ -879,50 +1152,74 @@ public class TowerDefence extends JFrame {
             long effectiveCooldown = (long) (actualFireRate / GAME_SPEED_MULTIPLIER);
             
             if (currentTime - lastShotTime < effectiveCooldown) {
+                // NEW: Update target even if not firing, for rotation
+                updateTarget();
                 return; 
             }
 
-            Enemy target = findTarget();
-            if (target != null) {
-                projectiles.add(new Projectile(x, y, damage, target, attackColor));
+            // Find a new target if current is null or dead
+            updateTarget(); 
+            
+            if (currentTarget != null) {
+                // Fire projectile
+                projectiles.add(new Projectile(x, y, damage, currentTarget, attackColor));
                 lastShotTime = currentTime;
             }
         }
-
-        protected Enemy findTarget() {
-            Enemy closestEnemy = null;
-            double minDistance = Double.MAX_VALUE;
-
-            for (Enemy enemy : enemies) {
-                if (enemy.isDead()) continue;
-                
-                double distance = Point2D.distance(enemy.getX(), enemy.getY(), x, y);
-
-                if (distance <= this.range && distance < minDistance) {
-                    minDistance = distance;
-                    closestEnemy = enemy;
-                }
+        
+        /** Ts updates the target angle so that the turret looks at the enemy. ALWAYS SET IT TO NEGATIVE OR ELSE it will look backwards**/
+        protected void updateTargetAngle() {
+            if (currentTarget != null && !currentTarget.isDead()) {
+                double angle = Math.atan2(currentTarget.getY() - y, currentTarget.getX() - x);
+                this.currentAngle = angle - -(Math.PI / 2);
+            } else {
+                currentTarget = null; // Clear target if it's dead or null
             }
-            return closestEnemy;
         }
         
-        protected Enemy findFarthestOnPath() {
-            Enemy farthestEnemy = null;
-            int maxWaypointIndex = -1;
-
-            for (Enemy enemy : enemies) {
-                if (enemy.isDead()) continue;
+        // Target finder logic
+        protected void updateTarget() {
+             // Only find a new target if the current one is dead or out of range
+            if (currentTarget == null || currentTarget.isDead() || 
+                Point2D.distance(currentTarget.getX(), currentTarget.getY(), x, y) > this.range) {
                 
-                double distance = Point2D.distance(enemy.getX(), enemy.getY(), x, y);
-
-                if (distance <= this.range) {
-                    if (enemy.currentWaypoint > maxWaypointIndex) {
-                        maxWaypointIndex = enemy.currentWaypoint;
-                        farthestEnemy = enemy;
-                    }
-                }
+                this.currentTarget = findTarget();
             }
-            return farthestEnemy;
+        }
+
+        // Fİnd tarhet uses targeting mode to find target
+        protected Enemy findTarget() {
+            // Filter enemies that are in range and not dead
+            List<Enemy> inRangeEnemies = enemies.stream()
+                .filter(enemy -> !enemy.isDead() && Point2D.distance(enemy.getX(), enemy.getY(), x, y) <= this.range)
+                .toList();
+
+            if (inRangeEnemies.isEmpty()) {
+                return null;
+            }
+            
+            // Select target based on targeting mode
+            Optional<Enemy> target;
+            switch (targetingMode) {
+                case FARTHEST:
+                    // Farthest down the path (highest currentWaypoint, then farthest distance on that waypoint)
+                    target = inRangeEnemies.stream()
+                        .max(Comparator.comparingInt((Enemy e) -> e.currentWaypoint)
+                                     .thenComparingDouble(e -> e.getDistanceOnWaypoint()));
+                    break;
+                case STRONGEST:
+                    // Highest current HP
+                    target = inRangeEnemies.stream()
+                        .max(Comparator.comparingInt(e -> e.health));
+                    break;
+                case NEAREST:
+                default:
+                    // Closest distance to the tower
+                    target = inRangeEnemies.stream()
+                        .min(Comparator.comparingDouble(e -> Point2D.distance(e.getX(), e.getY(), x, y)));
+                    break;
+            }
+            return target.orElse(null);
         }
 
         public abstract void draw(Graphics2D g2d);
@@ -930,13 +1227,13 @@ public class TowerDefence extends JFrame {
 
     /** Basic Cannon Tower. */
     class BasicTower extends Tower {
-        public static final int COST = 25;
+        public static final int COST = 150;
         public static final int RANGE = 150; 
 
         public BasicTower(int x, int y) {
             super(x, y);
             this.damage = 25;
-            this.fireRate = 1250; 
+            this.fireRate = 1000; 
             this.range = RANGE;
             this.color = Color.CYAN;
             this.attackColor = Color.YELLOW;
@@ -945,28 +1242,45 @@ public class TowerDefence extends JFrame {
         
         @Override
         public void draw(Graphics2D g2d) {
+            updateTargetAngle(); // Update the angle first
+
+            // Draw Base (does not rotate)
             g2d.setColor(new Color(50, 100, 50).darker());
             g2d.fillRect(x - 12, y - 5, 24, 15);
             g2d.setColor(Color.BLUE.darker());
             g2d.fillOval(x - 8, y - 12, 16, 16);
-            g2d.setColor(Color.LIGHT_GRAY);
-            g2d.fillRect(x - 3, y - 20, 6, 18);
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(x - 3, y - 22, 6, 2);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y); // Move origin to tower center
+            g2dCopy.rotate(currentAngle); // Rotate canvas
+            
+            // Draw barrel (relative to 0,0)
+            g2dCopy.setColor(Color.LIGHT_GRAY);
+            g2dCopy.fillRect(-3, -20, 6, 18); // Centered barrel pointing "up"
+            g2dCopy.setColor(Color.BLACK);
+            g2dCopy.fillRect(-3, -22, 6, 2);
+            
+            g2dCopy.dispose(); // Restore original canvas state
+            // -----------------------------
+
+            // Draw range indicator (does not rotate)
+            if (selectedTower == this) { // Only draw range if selected
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
         }
     }
 
     /** Long-range, high-damage Sniper Tower. */
     class SniperTower extends Tower {
-        public static final int COST = 100;
-        public static final int RANGE = 1200;
+        public static final int COST = 700;
+        public static final int RANGE = 4000;
 
         public SniperTower(int x, int y) {
             super(x, y);
-            this.damage = 100;
-            this.fireRate = 2000; 
+            this.damage = 200;
+            this.fireRate = 4000; 
             this.range = RANGE;
             this.color = Color.CYAN.darker();
             this.attackColor = Color.CYAN;
@@ -975,23 +1289,39 @@ public class TowerDefence extends JFrame {
 
         @Override
         public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+
+            // Draw Base (does not rotate)
             g2d.setColor(new Color(200, 200, 200)); 
             g2d.fillRect(x - 10, y, 20, 10);
             g2d.setColor(Color.DARK_GRAY);
             g2d.fillRect(x - 2, y - 25, 4, 25); 
             g2d.setColor(this.color);
             g2d.fillOval(x - 7, y - 30, 14, 14);
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(x - 1, y - 45, 2, 15);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y - 23); // Rotate around the head
+            g2dCopy.rotate(currentAngle);
+            
+            g2dCopy.setColor(Color.BLACK);
+            g2dCopy.fillRect(-1, -22, 2, 22); // Long thin barrel
+            
+            g2dCopy.dispose();
+            // -----------------------------
+
+            // Draw range indicator (does not rotate)
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
         }
     }
     
     /** Fast-firing Machine Gun Tower. */
     class MachineGunTower extends Tower {
-        public static final int COST = 75;
-        public static final int RANGE = 100; 
+        public static final int COST = 300;
+        public static final int RANGE = 200; 
 
         public MachineGunTower(int x, int y) {
             super(x, y);
@@ -1005,136 +1335,346 @@ public class TowerDefence extends JFrame {
 
         @Override
         public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+            
+            // Draw Base (does not rotate)
             g2d.setColor(this.color.darker());
             g2d.fillRect(x - 12, y - 12, 24, 24);
             g2d.setColor(Color.LIGHT_GRAY);
             g2d.fillOval(x - 8, y - 8, 16, 16);
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(x - 7, y - 15, 3, 10);
-            g2d.fillRect(x, y - 18, 3, 13);
-            g2d.fillRect(x + 4, y - 15, 3, 10);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y);
+            g2dCopy.rotate(currentAngle);
+            
+            g2dCopy.setColor(Color.BLACK);
+            g2dCopy.fillRect(-7, -15, 3, 10);
+            g2dCopy.fillRect(-1, -18, 3, 13);
+            g2dCopy.fillRect(5, -15, 3, 10);
+            
+            g2dCopy.dispose();
+            // -----------------------------
+
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
         }
     }
 
-    /** Continuous-damage Inferno Tower. */
+    /** Continuous-damage  Tower. */
     class InfernoTower extends Tower {
-        public static final int COST = 150;
-        public static final int RANGE = 120; 
+        public static final int COST = 400;
+        public static final int RANGE = 200; 
 
-        private Enemy currentAttackTarget = null;
         private long visualEndTime = 0; 
+
+        
+
+     
 
         public InfernoTower(int x, int y) {
             super(x, y);
-            this.damage = 5; 
+            this.damage = 15; 
             this.fireRate = 100;
             this.range = RANGE;
             this.color = Color.ORANGE;
             this.attackColor = Color.YELLOW; 
             this.cost = COST;
         }
+
+        public void startDamageIncrement() {
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(() -> {
+                damage++;
+                System.out.println("DMG Increased --> : " + damage); // Optional: Log the damage
+            }, 0, 250, TimeUnit.MILLISECONDS);
+        }
         
         @Override
         public void attack() {
             long currentTime = System.currentTimeMillis();
             long effectiveCooldown = (long) (getActualFireRate() / GAME_SPEED_MULTIPLIER);
 
+            // Update target for rotation even if not firing
+            updateTarget();
+            
             if (currentTime - lastShotTime < effectiveCooldown) {
+                // If we still have a target, keep the visual alive
+                if (currentTarget != null) {
+                    visualEndTime = currentTime + 150; // Extend visual
+                }
                 return; 
             }
             
-            Enemy target = findTarget();
-            if (target != null) {
-                target.takeDamage(damage);
-                currentAttackTarget = target;
+            if (currentTarget != null) {
+                currentTarget.takeDamage(damage);
                 visualEndTime = currentTime + 150;
                 lastShotTime = currentTime;
-            } else {
-                currentAttackTarget = null;
             }
         }
 
         @Override
         public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+            
+            // Draw Base (does not rotate)
             g2d.setColor(new Color(150, 50, 0)); 
             g2d.fillOval(x - 15, y - 15, 30, 30); 
             g2d.setColor(Color.ORANGE);
             g2d.fillOval(x - 8, y - 8, 16, 16);
-            g2d.setColor(Color.BLACK);
-            int[] xPoints = {x - 5, x + 5, x};
-            int[] yPoints = {y - 15, y - 15, y - 25};
-            g2d.fillPolygon(xPoints, yPoints, 3);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
 
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y);
+            g2dCopy.rotate(currentAngle);
+
+            g2dCopy.setColor(Color.BLACK);
+            int[] xPoints = {-5, 5, 0};
+            int[] yPoints = {-15, -15, -25};
+            g2dCopy.fillPolygon(xPoints, yPoints, 3);
+            
             // Draw flame visual if attacking
-            if (currentAttackTarget != null && System.currentTimeMillis() < visualEndTime && !currentAttackTarget.isDead()) {
-                Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            if (currentTarget != null && System.currentTimeMillis() < visualEndTime && !currentTarget.isDead()) {
                 g2dCopy.setColor(attackColor);
                 g2dCopy.setStroke(new BasicStroke(5));
-                g2dCopy.drawLine(x, y, (int)currentAttackTarget.getX(), (int)currentAttackTarget.getY());
-                g2dCopy.dispose();
+                // Draw line "up" towards target
+                g2dCopy.drawLine(0, -25, 0, -35 - (int)(Math.random() * 10)); 
+            }
+            g2dCopy.dispose();
+            // -----------------------------
+            
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
+        }
+    }
+
+    class LaserBeamer extends Tower {
+        public static final int COST = 500;
+        public static final int RANGE = 300; 
+
+        private long visualEndTime = 0; 
+
+        public LaserBeamer(int x, int y) {
+            super(x, y);
+            this.damage = 40; 
+            this.fireRate = 800;
+            this.range = RANGE;
+            this.color = Color.BLUE.darker();
+            this.attackColor = Color.MAGENTA; 
+            this.cost = COST;
+        }
+        
+        @Override
+        public void attack() {
+            long currentTime = System.currentTimeMillis();
+            long effectiveCooldown = (long) (getActualFireRate() / GAME_SPEED_MULTIPLIER);
+
+            // Update target for rotation even if not firing
+            updateTarget();
+            
+            if (currentTime - lastShotTime < effectiveCooldown) {
+                // If we still have a target, keep the visual alive
+                if (currentTarget != null) {
+                    visualEndTime = currentTime + 150; // Extend visual
+                }
+                return; 
+            }
+            
+            if (currentTarget != null) {
+                currentTarget.takeDamage(damage);
+                visualEndTime = currentTime + 150;
+                lastShotTime = currentTime;
+            }
+        }
+
+        @Override
+        public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+            
+            // Draw Base (does not rotate)
+            g2d.setColor(new Color(150, 50, 0)); 
+            g2d.fillOval(x - 15, y - 15, 30, 30); 
+            g2d.setColor(Color.BLUE);
+            g2d.fillOval(x - 8, y - 8, 16, 16);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y);
+            g2dCopy.rotate(currentAngle);
+
+            // Draw turret body (circle)
+            g2dCopy.setColor(Color.GRAY);
+            g2dCopy.fillOval(-10, -10, 20, 20);
+
+            // Draw guns (rectangles)
+            g2dCopy.setColor(Color.DARK_GRAY);
+            g2dCopy.fillRect(-15, -5, 10, 10); // Left gun
+            g2dCopy.fillRect(5, -5, 10, 10);  // Right gun
+
+            // Draw flame visual if attacking
+            if (currentTarget != null && System.currentTimeMillis() < visualEndTime && !currentTarget.isDead()) {
+                g2dCopy.setColor(attackColor);
+                g2dCopy.setStroke(new BasicStroke(5));
+                // Draw line "up" towards target
+                g2dCopy.drawLine(0, -25, 0, -35 - (int)(Math.random() * 10)); 
+            }
+            g2dCopy.dispose();
+            // -----------------------------
+            
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50)); 
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
             }
         }
     }
 
     /** Mortar Tower: Area of Effect. */
     class MortarTower extends Tower {
-        public static final int COST = 120;
-        public static final int RANGE = 200; 
-        private static final int AOE_RANGE = 50; 
+        public static final int COST = 750;
+        public static final int RANGE = 5000; 
+        private static final int AOE_RANGE = 100; 
 
         public MortarTower(int x, int y) {
             super(x, y);
-            this.damage = 40;
-            this.fireRate = 2500; 
-            this.range = RANGE;
+            this.damage = 150;
+            this.fireRate = 4000; 
+            setTargetingMode(FARTHEST); // Mortars default to Farthest
             this.color = Color.GRAY;
             this.attackColor = Color.BLACK;
             this.cost = COST;
+            setTargetingMode(FARTHEST); // Mortars default to Farthest
         }
 
         @Override
         public void attack() {
             long currentTime = System.currentTimeMillis();
             long effectiveCooldown = (long) (getActualFireRate() / GAME_SPEED_MULTIPLIER);
+            
+            updateTarget(); // Update target for rotation
+            
             if (currentTime - lastShotTime < effectiveCooldown) {
                 return; 
             }
 
-            Enemy target = findFarthestOnPath();
-            if (target != null) {
-                projectiles.add(new MortarProjectile(x, y, damage, target, attackColor, AOE_RANGE)); 
+            if (currentTarget != null) {
+                projectiles.add(new MortarProjectile(x, y, damage, currentTarget, attackColor, AOE_RANGE)); 
                 lastShotTime = currentTime;
             }
         }
         
         @Override
         public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+
+            // Draw Base (does not rotate)
             g2d.setColor(new Color(50, 50, 50)); 
             g2d.fillRect(x - 12, y - 5, 24, 15);
             g2d.setColor(Color.LIGHT_GRAY);
             g2d.fillOval(x - 8, y - 12, 16, 16);
-            g2d.setColor(Color.DARK_GRAY);
-            g2d.drawLine(x, y, x - 10, y - 25);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y);
+            g2dCopy.rotate(currentAngle);
+            
+            g2dCopy.setColor(Color.DARK_GRAY);
+            g2dCopy.fillRect(-4, -25, 8, 15); // Short, thick barrel
+            
+            g2dCopy.dispose();
+            // -----------------------------
+
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
         }
     }
+
+    class BombTower extends Tower {
+        public static final int COST = 400;
+        public static final int RANGE = 300; 
+        private static final int AOE_RANGE = 50; 
+
+        public BombTower(int x, int y) {
+            super(x, y);
+            this.damage = 150;
+            this.fireRate = 1000; 
+            setTargetingMode(FARTHEST); // Mortars default to Farthest
+            this.color = Color.GRAY;
+            this.attackColor = Color.BLACK;
+            this.cost = COST;
+            setTargetingMode(FARTHEST); // Mortars default to Farthest
+        }
+
+        @Override
+        public void attack() {
+            long currentTime = System.currentTimeMillis();
+            long effectiveCooldown = (long) (getActualFireRate() / GAME_SPEED_MULTIPLIER);
+            
+            updateTarget(); // Update target for rotation
+            
+            if (currentTime - lastShotTime < effectiveCooldown) {
+                return; 
+            }
+
+            if (currentTarget != null) {
+                projectiles.add(new MortarProjectile(x, y, damage, currentTarget, attackColor, AOE_RANGE)); 
+                lastShotTime = currentTime;
+            }
+        }
+        
+        @Override
+        public void draw(Graphics2D g2d) {
+            updateTargetAngle();
+
+            // Draw Base (does not rotate)
+            g2d.setColor(new Color(50, 50, 50)); 
+            g2d.fillRect(x - 12, y - 5, 24, 15);
+            g2d.setColor(Color.LIGHT_GRAY);
+            g2d.fillOval(x - 8, y - 12, 16, 16);
+
+            // --- Draw Rotating Turret ---
+            Graphics2D g2dCopy = (Graphics2D) g2d.create();
+            g2dCopy.translate(x, y);
+            g2dCopy.rotate(currentAngle);
+            
+            g2dCopy.setColor(Color.DARK_GRAY);
+            g2dCopy.fillRect(-4, -25, 8, 15); // Short, thick barrel
+            
+            g2dCopy.dispose();
+            // -----------------------------
+
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
+        }
+    }
+
+    
+
+    
     
     /** Slow Tower: Applies a slow debuff. */
     class SlowTower extends Tower {
-        public static final int COST = 80;
+        public static final int COST = 200;
         public static final int RANGE = 180; 
 
         public SlowTower(int x, int y) {
             super(x, y);
             this.damage = 0; 
-            this.fireRate = 1500; 
+            this.fireRate = 800; 
             this.range = RANGE;
-            this.color = Color.MAGENTA;
+            this.color = Color.blue.darker();
             this.attackColor = Color.CYAN;
             this.cost = COST;
         }
@@ -1143,31 +1683,49 @@ public class TowerDefence extends JFrame {
         public void attack() {
             long currentTime = System.currentTimeMillis();
             long effectiveCooldown = (long) (getActualFireRate() / GAME_SPEED_MULTIPLIER);
+            
+            updateTarget(); // Update target for rotation
 
             if (currentTime - lastShotTime < effectiveCooldown) {
                 return; 
             }
             
-            Enemy target = findTarget();
-            if (target != null) {
-                target.applySlow();
-                projectiles.add(new Projectile(x, y, 0, target, attackColor)); // Visual only
+            if (currentTarget != null) {
+                currentTarget.applySlow();
+                projectiles.add(new Projectile(x, y, 0, currentTarget, attackColor)); // Visual only
                 lastShotTime = currentTime;
             }
         }
 
         @Override
         public void draw(Graphics2D g2d) {
-            g2d.setColor(Color.PINK);
-            g2d.fillOval(x - 10, y - 10, 20, 20);
-            g2d.setColor(Color.WHITE);
-            g2d.drawString("S", x - 4, y + 4);
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
-            g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            updateTargetAngle();
+
+            // Draw Base (Light Cyan Circle)
+            g2d.setColor(new Color(224, 255, 255)); // Light Cyan
+            g2d.fillOval(x - 15, y - 15, 30, 30);
+        
+            // Draw Diamond (Light Blue)
+            g2d.setColor(new Color(173, 216, 230)); // Light Blue
+            int[] xPoints = {x, x - 10, x, x + 10};
+            int[] yPoints = {y - 10, y, y + 10, y};
+            g2d.fillPolygon(xPoints, yPoints, 4);
+        
+            // Draw Turret (Black)
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(x - 2, y - 10, 4, 10); // Turret body
+            g2d.fillRect(x - 1, y - 15, 2, 5); // Turret barrel
+            // -------------------------------
+            
+            // Draw range indicator
+            if (selectedTower == this) {
+                g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
+                g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+            }
         }
     }
 
-    /** Money Farm: Generates money passively. */
+    /** Money Farm: Generates money passively. (Does not rotate) */
     class MoneyFarm extends Tower {
         public static final int COST = 150;
         public static final int RANGE = 0; 
@@ -1184,6 +1742,7 @@ public class TowerDefence extends JFrame {
 
         @Override
         public void attack() {
+            // This tower does not attack, it generates income
             long currentTime = System.currentTimeMillis();
             long effectiveCooldown = (long) (fireRate / GAME_SPEED_MULTIPLIER);
 
@@ -1197,6 +1756,7 @@ public class TowerDefence extends JFrame {
         
         @Override
         public void draw(Graphics2D g2d) {
+            // Money farm does not rotate and has no target
             g2d.setColor(Color.YELLOW);
             g2d.fillRect(x - 10, y - 10, 20, 20);
             g2d.setColor(Color.BLACK);
@@ -1204,11 +1764,11 @@ public class TowerDefence extends JFrame {
         }
     }
     
-    /** Beacon Tower: Buffs nearby towers' fire rate. */
+    /** Beacon Tower: Buffs nearby towers' fire rate. (Does not rotate) */
     class BeaconTower extends Tower {
-        public static final int COST = 200;
-        public static final int RANGE = 150; 
-        private double buffMultiplier = 0.25; 
+        public static final int COST = 1000;
+        public static final int RANGE = 200; 
+        private double buffMultiplier = 1; 
 
         public BeaconTower(int x, int y) {
             super(x, y);
@@ -1226,14 +1786,23 @@ public class TowerDefence extends JFrame {
 
         @Override
         public void draw(Graphics2D g2d) {
-            g2d.setColor(Color.MAGENTA.darker());
-            g2d.fillOval(x - 15, y - 15, 30, 30);
-            g2d.setColor(Color.WHITE);
-            g2d.drawString("B", x - 5, y + 5);
-            
-            // Draw persistent range circle to indicate buff area
-            g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 30));
-            g2d.fillOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
+       // Beacon does not rotate
+
+        // Draw Base (Magenta Circle with a larger size)
+        g2d.setColor(Color.MAGENTA.darker());
+        g2d.fillOval(x - 30, y - 30, 60, 60); // Larger base (30 radius, 60 diameter)
+
+        // Draw Inner Circle (White for a glowing effect)
+        g2d.setColor(Color.WHITE);
+        g2d.fillOval(x - 20, y - 20, 40, 40); // Smaller inner circle
+
+        // Draw "B" in the center
+        g2d.setColor(Color.MAGENTA.darker());
+        g2d.drawString("⬆", x - 5, y + 5);
+
+        // Draw persistent range circle to indicate buff area
+        g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 30));
+        g2d.fillOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
         }
     }
 
@@ -1255,7 +1824,7 @@ public class TowerDefence extends JFrame {
         }
 
         public void move(double speedMultiplier) {
-            if (target.isDead()) return;
+            if (target == null || target.isDead()) return;
             
             double dx = target.getX() - x;
             double dy = target.getY() - y;
@@ -1273,7 +1842,7 @@ public class TowerDefence extends JFrame {
         }
 
         public boolean hasHitTarget() {
-            if (target.isDead()) return false;
+            if (target == null || target.isDead()) return false;
             
             double distance = Point2D.distance(x, y, target.getX(), target.getY());
             return distance < 5; // A small radius for collision
@@ -1300,14 +1869,31 @@ public class TowerDefence extends JFrame {
         }
         
         public void applyExplosionDamage(List<Enemy> allEnemies) {
+            // Store impact point to draw explosion
+            double impactX = this.x;
+            double impactY = this.y;
+            
             for (Enemy enemy : allEnemies) {
                 if (enemy.isDead()) continue;
-                double distance = Point2D.distance(x, y, enemy.getX(), enemy.getY());
+                double distance = Point2D.distance(impactX, impactY, enemy.getX(), enemy.getY());
                 
                 if (distance <= aoeRange) {
                     // Damage falls off based on distance, but keep it simple for now
                     enemy.takeDamage(damage); 
                 }
+            }
+            
+            // Add a temporary visual effect for the explosion (simplified)
+            // A more robust way would be a separate "Effects" list
+            // gamePanel.add(new ExplosionEffect(impactX, impactY, aoeRange));
+        }
+        
+        // This is a kludge for a simple explosion visual.
+        // A proper implementation would have an effects manager.
+        class ExplosionEffect extends JComponent {
+            public ExplosionEffect(double x, double y, int radius) {
+                // This is not the right way to do it in this structure.
+                // We will draw the explosion in the projectile's draw method on impact.
             }
         }
 
@@ -1317,7 +1903,7 @@ public class TowerDefence extends JFrame {
             g2d.fillOval((int)x - 5, (int)y - 5, 10, 10);
             
             // Draw a temporary explosion ring on impact for visual
-            if (Point2D.distance(x, y, target.getX(), target.getY()) < 10) {
+            if (this.hasHitTarget()) {
                  g2d.setColor(new Color(255, 165, 0, 150));
                  g2d.drawOval((int)x - aoeRange, (int)y - aoeRange, aoeRange * 2, aoeRange * 2);
             }
