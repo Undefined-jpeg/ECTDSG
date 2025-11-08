@@ -73,33 +73,43 @@ public class ControlPanel extends JPanel {
         buildPanel.setBackground(new Color(220, 220, 220));
 
         buildBasicTowerButton = new JButton("TURRET ($" + BasicTower.COST + ")");
+        buildBasicTowerButton.setForeground(Color.GREEN.darker());
         buildBasicTowerButton.addActionListener(e -> { if (game.playerMoney >= BasicTower.COST) { game.placingTowerType = TowerDefence.BASIC; toggleBuildButtons(false); } });
 
         buildSniperTowerButton = new JButton("SNIPER ($" + SniperTower.COST + ")");
+        buildSniperTowerButton.setForeground(Color.GREEN.darker());
         buildSniperTowerButton.addActionListener(e -> { if (game.playerMoney >= SniperTower.COST) { game.placingTowerType = TowerDefence.SNIPER; toggleBuildButtons(false); } });
 
         buildMgTowerButton = new JButton("MINIGUN ($" + MachineGunTower.COST + ")");
+        buildMgTowerButton.setForeground(Color.GREEN.darker());
         buildMgTowerButton.addActionListener(e -> { if (game.playerMoney >= MachineGunTower.COST) { game.placingTowerType = TowerDefence.MG; toggleBuildButtons(false); } });
 
-        buildInfernoTowerButton = new JButton("INFERNO ($" + InfernoTower.COST + ")");
-        buildInfernoTowerButton.addActionListener(e -> { if (game.playerMoney >= InfernoTower.COST) { game.placingTowerType = TowerDefence.INFERNO; toggleBuildButtons(false); } });
-
-        buildLaserBeamerButton = new JButton("LASER BEAM ($" + LaserBeamer.COST + ")");
-        buildLaserBeamerButton.addActionListener(e -> { if (game.playerMoney >= LaserBeamer.COST) { game.placingTowerType = TowerDefence.LASER; toggleBuildButtons(false); } });
-
         buildMortarTowerButton = new JButton("MORTAR ($" + MortarTower.COST + ")");
+        buildMortarTowerButton.setForeground(Color.GREEN.darker());
         buildMortarTowerButton.addActionListener(e -> { if (game.playerMoney >= MortarTower.COST) { game.placingTowerType = TowerDefence.MORTAR; toggleBuildButtons(false); } });
 
         buildBombTowerButton = new JButton("BOMB ($" + BombTower.COST + ")");
+        buildBombTowerButton.setForeground(Color.GREEN.darker());
         buildBombTowerButton.addActionListener(e -> { if (game.playerMoney >= BombTower.COST) { game.placingTowerType = TowerDefence.BOMB; toggleBuildButtons(false); } });
 
+        buildInfernoTowerButton = new JButton("INFERNO ($" + InfernoTower.COST + ")");
+        buildInfernoTowerButton.setForeground(Color.ORANGE.darker());
+        buildInfernoTowerButton.addActionListener(e -> { if (game.playerMoney >= InfernoTower.COST) { game.placingTowerType = TowerDefence.INFERNO; toggleBuildButtons(false); } });
+
+        buildLaserBeamerButton = new JButton("LASER BEAM ($" + LaserBeamer.COST + ")");
+        buildLaserBeamerButton.setForeground(Color.ORANGE.darker());
+        buildLaserBeamerButton.addActionListener(e -> { if (game.playerMoney >= LaserBeamer.COST) { game.placingTowerType = TowerDefence.LASER; toggleBuildButtons(false); } });
+
         buildSlowTowerButton = new JButton("SLOWER ($" + SlowTower.COST + ")");
+        buildSlowTowerButton.setForeground(Color.BLUE);
         buildSlowTowerButton.addActionListener(e -> { if (game.playerMoney >= SlowTower.COST) { game.placingTowerType = TowerDefence.SLOW; toggleBuildButtons(false); } });
 
         buildFarmTowerButton = new JButton("GOLD MINE ($" + MoneyFarm.COST + ")");
+        buildFarmTowerButton.setForeground(Color.BLUE);
         buildFarmTowerButton.addActionListener(e -> { if (game.playerMoney >= MoneyFarm.COST) { game.placingTowerType = TowerDefence.FARM; toggleBuildButtons(false); } });
 
         buildBeaconTowerButton = new JButton("BEACON ($" + BeaconTower.COST + ")");
+        buildBeaconTowerButton.setForeground(Color.BLUE);
         buildBeaconTowerButton.addActionListener(e -> { if (game.playerMoney >= BeaconTower.COST) { game.placingTowerType = TowerDefence.BEACON; toggleBuildButtons(false); } });
 
         cancelBuildButton = new JButton("Cancel Build");
@@ -110,10 +120,10 @@ public class ControlPanel extends JPanel {
         buildPanel.add(buildBasicTowerButton);
         buildPanel.add(buildSniperTowerButton);
         buildPanel.add(buildMgTowerButton);
-        buildPanel.add(buildInfernoTowerButton);
-        buildPanel.add(buildLaserBeamerButton);
         buildPanel.add(buildMortarTowerButton);
         buildPanel.add(buildBombTowerButton);
+        buildPanel.add(buildInfernoTowerButton);
+        buildPanel.add(buildLaserBeamerButton);
         buildPanel.add(buildSlowTowerButton);
         buildPanel.add(buildFarmTowerButton);
         buildPanel.add(buildBeaconTowerButton);
@@ -196,10 +206,10 @@ public class ControlPanel extends JPanel {
         buildBasicTowerButton.setEnabled(enableBuild);
         buildSniperTowerButton.setEnabled(enableBuild);
         buildMgTowerButton.setEnabled(enableBuild);
-        buildInfernoTowerButton.setEnabled(enableBuild);
-        buildLaserBeamerButton.setEnabled(enableBuild);
         buildMortarTowerButton.setEnabled(enableBuild);
         buildBombTowerButton.setEnabled(enableBuild);
+        buildInfernoTowerButton.setEnabled(enableBuild);
+        buildLaserBeamerButton.setEnabled(enableBuild);
         buildSlowTowerButton.setEnabled(enableBuild);
         buildFarmTowerButton.setEnabled(enableBuild);
         buildBeaconTowerButton.setEnabled(enableBuild);

@@ -8,8 +8,8 @@ public class BossEnemy extends Enemy {
 
     public BossEnemy(Path path, int bossWaveLevel) {
         super(path,
-              5000 + bossWaveLevel * 500,
-              0.3 + bossWaveLevel * 0.05,
+              5000 + bossWaveLevel * 1000,
+              0.3 + bossWaveLevel * 0.1,
               300 + bossWaveLevel * 50,
               "BOSS");
 

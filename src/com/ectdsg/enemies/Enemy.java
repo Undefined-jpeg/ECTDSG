@@ -19,12 +19,12 @@ public class Enemy {
     protected int maxHealth;
 
     public long slowEndTime = 0;
-    private final long SLOW_DURATION = 1000;
+    private final long SLOW_DURATION = 1500;
 
     protected int damageReduction = 0;
     protected int shieldHitsRemaining = 0;
     protected long teleportTimer = 0;
-    private final long TELEPORT_COOLDOWN = 10000;
+    private final long TELEPORT_COOLDOWN = 1000;
 
     public Enemy(Path path, int health, double speed, int bounty, String type) {
         this.path = path;
@@ -36,16 +36,40 @@ public class Enemy {
 
         if (type.equals("ARMORED_ENEMY")) {
             this.color = new Color(80, 80, 80);
-            this.damageReduction = 10;
-        } else if (type.equals("SHIELDED_ENEMY")) {
+            this.damageReduction = 12;
+        }
+        else if (type.equals("TANKED_ENEMY")) {
+            this.color = new Color(120,120,120);
+            this.damageReduction = 25;
+        }
+        else if (type.equals("RIOT_ENEMY")) {
+            this.color = new Color(180, 180, 180);
+            this.damageReduction = 50;
+        }
+        else if (type.equals("SHIELDED_ENEMY")) {
             this.color = new Color(0, 150, 255);
             this.shieldHitsRemaining = 3;
-        } else if (type.equals("TELEPORTER_ENEMY")) {
-            this.color = new Color(255, 140, 0);
+        }
+        else if (type.equals("PROTECTED_ENEMY")) {
+            this.color = new Color(0, 102, 204);
+            this.shieldHitsRemaining = 10;
+        }
+        else if (type.equals("RITUAL_ENEMY")) {
+            this.color = new Color(0, 0, 204);
+            this.shieldHitsRemaining = 50;
+        }
+         else if (type.equals("TELEPORTER_ENEMY")) {
+            this.color = new Color(204, 51, 255);
             this.teleportTimer = TELEPORT_COOLDOWN;
-        } else if (type.equals("BOSS")) {
+        }
+        else if (type.equals("WARPER_ENEMY")) {
+            this.color = new Color(102, 0, 102);
+            this.teleportTimer = TELEPORT_COOLDOWN;
+        }
+        else if (type.equals("BOSS")) {
             this.color = new Color(75, 0, 130);
-        } else {
+        }
+        else {
             this.color = Color.RED;
         }
 
@@ -68,6 +92,13 @@ public class Enemy {
             this.teleportTimer -= (long)(16 * speedMultiplier);
             if (this.teleportTimer <= 0) {
                 currentWaypoint = Math.min(currentWaypoint + 3, path.getLength() - 1);
+                this.teleportTimer = TELEPORT_COOLDOWN;
+            }
+        }
+        else if (this.type.equals("WARPER_ENEMY")) {
+            this.teleportTimer -= (long)(32 * speedMultiplier);
+            if (this.teleportTimer <= 0) {
+                currentWaypoint = Math.min(currentWaypoint + 5, path.getLength() - 5);
                 this.teleportTimer = TELEPORT_COOLDOWN;
             }
         }
@@ -145,9 +176,21 @@ public class Enemy {
             g2d.setColor(Color.BLACK);
             g2d.drawOval((int)x - 10, (int)y - 10, 20, 20);
         }
+        else if (this.type.equals("TANKED_ENEMY")) {
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.drawOval((int)x - 10, (int)y - 10, 20, 20);
+        }
+        else if (this.type.equals("RIOT_ENEMY")) {
+            g2d.setColor(Color.GRAY);
+            g2d.drawOval((int)x - 10, (int)y - 10, 20, 20);
+        }
         if (this.type.equals("TELEPORTER_ENEMY")) {
             g2d.setColor(Color.WHITE);
-            g2d.drawString("T", (int)x - 4, (int)y + 4);
+            g2d.drawString("㊃", (int)x - 4, (int)y + 4);
+        }
+        else if (this.type.equals("WARPER_ENEMY")) {
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("Ѱ", (int)x - 4, (int)y + 4);
         }
 
         g2d.setColor(Color.DARK_GRAY);

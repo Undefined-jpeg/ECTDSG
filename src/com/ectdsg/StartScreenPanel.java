@@ -23,7 +23,7 @@ public class StartScreenPanel extends JPanel {
         add(title, gbc);
 
         gbc.gridy++;
-        JLabel info = new JLabel("ts game sucks y r u playing");
+        JLabel info = new JLabel("this game sucks....");
         info.setFont(new Font("Arial", Font.ITALIC, 16));
         info.setForeground(Color.LIGHT_GRAY);
         add(info, gbc);

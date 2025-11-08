@@ -10,17 +10,17 @@ public class Path {
     public Path(int width, int height) {
         addPoint(0, (int)(height * 0.10));
         addPoint((int)(width * 0.20), (int)(height * 0.10));
-        addPoint((int)(width * 0.20), (int)(height * 0.30));
+        addPoint((int)(width * 0.10), (int)(height * 0.30));
         addPoint((int)(width * 0.40), (int)(height * 0.30));
-        addPoint((int)(width * 0.40), (int)(height * 0.50));
-        addPoint((int)(width * 0.60), (int)(height * 0.50));
+        addPoint((int)(width * 0.40), (int)(height * 0.60));
+        addPoint((int)(width * 0.60), (int)(height * 0.30));
         addPoint((int)(width * 0.60), (int)(height * 0.70));
-        addPoint((int)(width * 0.80), (int)(height * 0.70));
+        addPoint((int)(width * 0.80), (int)(height * 0.35));
         addPoint((int)(width * 0.80), (int)(height * 0.90));
         addPoint(width, (int)(height * 0.90));
     }
 
-    public void addPoint(int x, int y) {
+    public final void addPoint(int x, int y) {
         points.add(new Point(x, y));
     }
 

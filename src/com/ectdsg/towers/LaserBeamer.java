@@ -12,10 +12,10 @@ public class LaserBeamer extends Tower {
     public LaserBeamer(int x, int y, TowerDefence game) {
         super(x, y, game);
         this.damage = 40;
-        this.fireRate = 800;
+        this.fireRate = 400;
         this.range = RANGE;
         this.color = Color.BLUE.darker();
-        this.attackColor = Color.MAGENTA;
+        this.attackColor = Color.cyan;
         this.cost = COST;
     }
 

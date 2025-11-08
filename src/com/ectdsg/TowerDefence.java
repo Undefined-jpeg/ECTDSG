@@ -27,7 +27,7 @@ public class TowerDefence extends JFrame {
 
     public int playerLives = 100;
     public int playerMoney = 750;
-    public int waveNumber = 0;
+    public int waveNumber = 21;
 
     public String placingTowerType = "NONE";
 
