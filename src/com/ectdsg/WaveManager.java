@@ -3,8 +3,7 @@ package com.ectdsg;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import com.ectdsg.enemies.Enemy;
-import com.ectdsg.enemies.BossEnemy;
+import com.ectdsg.enemies.*;
 
 public class WaveManager {
 
@@ -42,27 +41,20 @@ public class WaveManager {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (spawned < enemiesToSpawn) {
-                    String type = TowerDefence.BASIC_ENEMY;
-                    int health = baseHealth;
-                    double speed = baseSpeed;
-                    int bounty = 10;
-
                     double rand = Math.random();
-                    if (game.waveNumber >= 2 && rand < 0.25) {
-                        type = TowerDefence.ARMORED_ENEMY;
-                        health = (int)(baseHealth * 1.5);
-                        bounty = 15;
-                    } else if (game.waveNumber >= 4 && rand > 0.75) {
-                         type = TowerDefence.SHIELDED_ENEMY;
-                         health = (int)(baseHealth * 1.2);
-                         bounty = 12;
-                    } else if (game.waveNumber >= 6 && rand > 0.9) {
-                         type = TowerDefence.TELEPORTER_ENEMY;
-                         health = baseHealth;
-                         speed = baseSpeed * 1.5;
-                         bounty = 20;
+                    if (rand < 0.1) {
+                        game.enemies.add(new TankedEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.2) {
+                        game.enemies.add(new RiotEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.3) {
+                        game.enemies.add(new ProtectedEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.4) {
+                        game.enemies.add(new RitualEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.5) {
+                        game.enemies.add(new WarperEnemy(game.path, baseHealth, baseSpeed));
+                    } else {
+                        game.enemies.add(new Enemy(game.path, baseHealth, baseSpeed, 10, "BASIC_ENEMY"));
                     }
-                    game.enemies.add(new Enemy(game.path, health, speed, bounty, type));
                     spawned++;
                 } else {
                     game.controlPanel.waveTimer.stop();

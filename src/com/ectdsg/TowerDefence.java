@@ -46,6 +46,11 @@ public class TowerDefence extends JFrame {
     public static final String ARMORED_ENEMY = "ARMORED_ENEMY";
     public static final String SHIELDED_ENEMY = "SHIELDED_ENEMY";
     public static final String TELEPORTER_ENEMY = "TELEPORTER_ENEMY";
+    public static final String TANKED_ENEMY = "TANKED_ENEMY";
+    public static final String RIOT_ENEMY = "RIOT_ENEMY";
+    public static final String PROTECTED_ENEMY = "PROTECTED_ENEMY";
+    public static final String RITUAL_ENEMY = "RITUAL_ENEMY";
+    public static final String WARPER_ENEMY = "WARPER_ENEMY";
     public static final String BOSS_ENEMY_TYPE = "BOSS";
 
     public static final int BOSS_WAVE_FREQUENCY = 20;

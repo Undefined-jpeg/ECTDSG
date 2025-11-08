@@ -8,16 +8,15 @@ public class Path {
     public List<Point> points = new ArrayList<>();
 
     public Path(int width, int height) {
-        addPoint(0, (int)(height * 0.10));
-        addPoint((int)(width * 0.20), (int)(height * 0.10));
-        addPoint((int)(width * 0.20), (int)(height * 0.30));
-        addPoint((int)(width * 0.40), (int)(height * 0.30));
-        addPoint((int)(width * 0.40), (int)(height * 0.50));
-        addPoint((int)(width * 0.60), (int)(height * 0.50));
-        addPoint((int)(width * 0.60), (int)(height * 0.70));
-        addPoint((int)(width * 0.80), (int)(height * 0.70));
-        addPoint((int)(width * 0.80), (int)(height * 0.90));
-        addPoint(width, (int)(height * 0.90));
+        // A more complex path for version 1.3
+        addPoint(0, height / 2);
+        addPoint(width / 4, height / 2);
+        addPoint(width / 4, height / 4);
+        addPoint(width / 2, height / 4);
+        addPoint(width / 2, 3 * height / 4);
+        addPoint(3 * width / 4, 3 * height / 4);
+        addPoint(3 * width / 4, height / 2);
+        addPoint(width, height / 2);
     }
 
     public void addPoint(int x, int y) {
