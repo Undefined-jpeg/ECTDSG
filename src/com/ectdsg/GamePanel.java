@@ -57,6 +57,10 @@ public class GamePanel extends JPanel {
             case TowerDefence.SLOW -> { newTower = new SlowTower(x, y, game); cost = SlowTower.COST; }
             case TowerDefence.FARM -> { newTower = new MoneyFarm(x, y, game); cost = MoneyFarm.COST; }
             case TowerDefence.BEACON -> { newTower = new BeaconTower(x, y, game); cost = BeaconTower.COST; }
+            case TowerDefence.GAMBLER -> { newTower = new GamblerTower(x, y, game); cost = GamblerTower.COST; }
+            case TowerDefence.DETECTOR -> { newTower = new DetectorTower(x, y, game); cost = DetectorTower.COST; }
+            case TowerDefence.CHAIN_LIGHTNING -> { newTower = new ChainLightningTower(x, y, game); cost = ChainLightningTower.COST; }
+            case TowerDefence.CONVERTER -> { newTower = new ConverterTower(x, y, game); cost = ConverterTower.COST; }
         }
 
         if (newTower != null) {
@@ -175,6 +179,10 @@ public class GamePanel extends JPanel {
                     case TowerDefence.SLOW -> { previewRange = SlowTower.RANGE; previewColor = Color.MAGENTA; towerCost = SlowTower.COST; }
                     case TowerDefence.FARM -> { previewRange = MoneyFarm.RANGE; previewColor = Color.YELLOW; towerCost = MoneyFarm.COST; }
                     case TowerDefence.BEACON -> { previewRange = BeaconTower.RANGE; previewColor = Color.MAGENTA; towerCost = BeaconTower.COST; }
+                    case TowerDefence.GAMBLER -> { previewRange = GamblerTower.RANGE; previewColor = Color.MAGENTA; towerCost = GamblerTower.COST; }
+                    case TowerDefence.DETECTOR -> { previewRange = DetectorTower.RANGE; previewColor = Color.YELLOW; towerCost = DetectorTower.COST; }
+                    case TowerDefence.CHAIN_LIGHTNING -> { previewRange = ChainLightningTower.RANGE; previewColor = Color.CYAN; towerCost = ChainLightningTower.COST; }
+                    case TowerDefence.CONVERTER -> { previewRange = ConverterTower.RANGE; previewColor = Color.CYAN; towerCost = ConverterTower.COST; }
                 }
 
                 boolean isValid = isLocationValid(mousePos.x, mousePos.y) && game.playerMoney >= towerCost;

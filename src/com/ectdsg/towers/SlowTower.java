@@ -16,6 +16,7 @@ public class SlowTower extends Tower {
         this.color = Color.blue.darker();
         this.attackColor = Color.CYAN;
         this.cost = COST;
+        this.upgradeCost = 150;
     }
 
     @Override
@@ -56,5 +57,13 @@ public class SlowTower extends Tower {
             g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
             g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
         }
+    }
+
+    @Override
+    public void upgrade() {
+        super.upgrade();
+        this.fireRate -= 100;
+        this.range += 20;
+        this.upgradeCost *= 2;
     }
 }

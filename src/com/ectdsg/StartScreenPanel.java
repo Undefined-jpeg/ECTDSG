@@ -6,6 +6,7 @@ import java.awt.*;
 public class StartScreenPanel extends JPanel {
 
     private TowerDefence game;
+    private JComboBox<String> mapSelector;
 
     public StartScreenPanel(TowerDefence game, int width, int height) {
         this.game = game;
@@ -29,13 +30,21 @@ public class StartScreenPanel extends JPanel {
         add(info, gbc);
 
         gbc.gridy++;
+        mapSelector = new JComboBox<>(new String[]{"Map 1", "Map 2", "Map 3"});
+        add(mapSelector, gbc);
+
+        gbc.gridy++;
         JButton startButton = new JButton("Start");
         startButton.setFont(new Font("Arial", Font.BOLD, 30));
         startButton.setBackground(new Color(0, 150, 0));
         startButton.setForeground(Color.WHITE);
         startButton.setFocusPainted(false);
         startButton.setBorder(BorderFactory.createRaisedBevelBorder());
-        startButton.addActionListener(e -> game.startGame());
+        startButton.addActionListener(e -> {
+            String selectedMap = (String) mapSelector.getSelectedItem();
+            game.setMap(selectedMap);
+            game.startGame();
+        });
         add(startButton, gbc);
     }
 }

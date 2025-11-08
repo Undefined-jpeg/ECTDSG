@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.ectdsg.enemies.Enemy;
+import com.ectdsg.enemies.*;
 import com.ectdsg.projectiles.Projectile;
 import com.ectdsg.towers.Tower;
 
@@ -41,6 +41,10 @@ public class TowerDefence extends JFrame {
     public static final String SLOW = "SLOW";
     public static final String FARM = "FARM";
     public static final String BEACON = "BEACON";
+    public static final String GAMBLER = "GAMBLER";
+    public static final String DETECTOR = "DETECTOR";
+    public static final String CHAIN_LIGHTNING = "CHAIN_LIGHTNING";
+    public static final String CONVERTER = "CONVERTER";
 
     public static final String BASIC_ENEMY = "BASIC_ENEMY";
     public static final String ARMORED_ENEMY = "ARMORED_ENEMY";
@@ -51,6 +55,10 @@ public class TowerDefence extends JFrame {
     public static final String PROTECTED_ENEMY = "PROTECTED_ENEMY";
     public static final String RITUAL_ENEMY = "RITUAL_ENEMY";
     public static final String WARPER_ENEMY = "WARPER_ENEMY";
+    public static final String HEALER_ENEMY = "HEALER_ENEMY";
+    public static final String SPLITTER_ENEMY = "SPLITTER_ENEMY";
+    public static final String GHOST_ENEMY = "GHOST_ENEMY";
+    public static final String FRIENDLY_ENEMY = "FRIENDLY_ENEMY";
     public static final String BOSS_ENEMY_TYPE = "BOSS";
 
     public static final int BOSS_WAVE_FREQUENCY = 20;
@@ -64,6 +72,14 @@ public class TowerDefence extends JFrame {
     public Path path;
     public WaveManager waveManager;
 
+    private long airstrikeCooldown = 30000; // 30 seconds
+    private long freezeCooldown = 20000; // 20 seconds
+    private long lastAirstrikeTime = 0;
+    private long lastFreezeTime = 0;
+
+    private int gamePanelWidth;
+    private int gamePanelHeight;
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new TowerDefence());
     }
@@ -74,13 +90,8 @@ public class TowerDefence extends JFrame {
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int controlPanelWidth = 200;
-        int gamePanelHeight = screenSize.height;
-        int gamePanelWidth = screenSize.width - controlPanelWidth;
-
-        path = new Path(gamePanelWidth, gamePanelHeight);
-        gamePanel = new GamePanel(this, gamePanelWidth, gamePanelHeight);
-        controlPanel = new ControlPanel(this, gamePanelHeight);
-        waveManager = new WaveManager(this);
+        gamePanelHeight = screenSize.height;
+        gamePanelWidth = screenSize.width - controlPanelWidth;
 
         startScreenPanel = new StartScreenPanel(this, gamePanelWidth + controlPanelWidth, gamePanelHeight);
 
@@ -96,12 +107,31 @@ public class TowerDefence extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 updateGame();
-                gamePanel.repaint();
+                if (gamePanel != null) {
+                    gamePanel.repaint();
+                }
             }
         });
     }
 
+    public void setMap(String map) {
+        if (map.equals("Map 2")) {
+            path = new Path2(gamePanelWidth, gamePanelHeight);
+        } else if (map.equals("Map 3")) {
+            path = new Path3(gamePanelWidth, gamePanelHeight);
+        } else {
+            path = new Path(gamePanelWidth, gamePanelHeight);
+        }
+    }
+
     public void startGame() {
+        if (path == null) {
+            setMap("Map 1");
+        }
+        gamePanel = new GamePanel(this, gamePanelWidth, gamePanelHeight);
+        controlPanel = new ControlPanel(this, gamePanelHeight);
+        waveManager = new WaveManager(this);
+
         remove(startScreenPanel);
 
         add(gamePanel, BorderLayout.CENTER);
@@ -143,8 +173,16 @@ public class TowerDefence extends JFrame {
         while (enemyIterator.hasNext()) {
             Enemy enemy = enemyIterator.next();
             enemy.move(GAME_SPEED_MULTIPLIER);
+            if (enemy instanceof HealerEnemy) {
+                ((HealerEnemy) enemy).healNearby(enemies);
+            }
+            if (enemy instanceof FriendlyEnemy) {
+                ((FriendlyEnemy) enemy).attackNearby(enemies);
+            }
             if (enemy.hasReachedEnd()) {
-                playerLives--;
+                if (!(enemy instanceof FriendlyEnemy)) {
+                    playerLives--;
+                }
                 enemyIterator.remove();
                 controlPanel.updateLabels();
             }
@@ -180,6 +218,9 @@ public class TowerDefence extends JFrame {
 
             if (p.target != null && p.target.isDead() && enemies.contains(p.target)) {
                  playerMoney += p.target.bounty;
+                 if (p.target instanceof SplitterEnemy) {
+                     ((SplitterEnemy) p.target).split(enemies);
+                 }
                  enemies.remove(p.target);
                  controlPanel.updateLabels();
             }
@@ -187,7 +228,12 @@ public class TowerDefence extends JFrame {
 
         enemies.removeIf(enemy -> {
             if (enemy.isDead()) {
-                playerMoney += enemy.bounty;
+                if (!(enemy instanceof FriendlyEnemy)) {
+                    playerMoney += enemy.bounty;
+                }
+                if (enemy instanceof SplitterEnemy) {
+                    ((SplitterEnemy) enemy).split(enemies);
+                }
                 controlPanel.updateLabels();
                 return true;
             }
@@ -205,5 +251,33 @@ public class TowerDefence extends JFrame {
 
     public void spawnWave() {
         waveManager.spawnWave();
+    }
+
+    public void airstrike() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAirstrikeTime > airstrikeCooldown) {
+            if (playerMoney >= 1000) {
+                playerMoney -= 1000;
+                for (Enemy enemy : enemies) {
+                    enemy.takeDamage(500);
+                }
+                lastAirstrikeTime = currentTime;
+                controlPanel.updateLabels();
+            }
+        }
+    }
+
+    public void freeze() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastFreezeTime > freezeCooldown) {
+            if (playerMoney >= 500) {
+                playerMoney -= 500;
+                for (Enemy enemy : enemies) {
+                    enemy.applySlow();
+                }
+                lastFreezeTime = currentTime;
+                controlPanel.updateLabels();
+            }
+        }
     }
 }

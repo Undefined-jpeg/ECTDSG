@@ -16,6 +16,7 @@ public class BasicTower extends Tower {
         this.color = Color.CYAN;
         this.attackColor = Color.YELLOW;
         this.cost = COST;
+        this.upgradeCost = 100;
     }
 
     @Override
@@ -62,5 +63,13 @@ public class BasicTower extends Tower {
             g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
             g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
         }
+    }
+
+    @Override
+    public void upgrade() {
+        super.upgrade();
+        this.damage += 10;
+        this.range += 20;
+        this.upgradeCost *= 2;
     }
 }

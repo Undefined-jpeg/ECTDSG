@@ -13,6 +13,8 @@ public class ControlPanel extends JPanel {
     private JLabel waveLabel;
     public JButton startWaveButton;
     public JButton fastForwardButton;
+    public JButton airstrikeButton;
+    public JButton freezeButton;
 
     public Timer waveTimer;
 
@@ -26,13 +28,19 @@ public class ControlPanel extends JPanel {
     private final JButton buildSlowTowerButton;
     private final JButton buildFarmTowerButton;
     private final JButton buildBeaconTowerButton;
+    private final JButton buildGamblerTowerButton;
+    private final JButton buildDetectorTowerButton;
+    private final JButton buildChainLightningTowerButton;
+    private final JButton buildConverterTowerButton;
     private JButton cancelBuildButton;
 
     private JPanel towerDetailPanel;
     private JLabel detailNameLabel;
     private JLabel detailSellLabel;
+    private JLabel detailLevelLabel;
     private JComboBox<String> targetingDropdown;
     private JButton sellButton;
+    private JButton upgradeButton;
 
     public boolean waveInProgress = false;
 
@@ -44,7 +52,7 @@ public class ControlPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JPanel topPanel = new JPanel();
-        topPanel.setLayout(new GridLayout(7, 1, 5, 5));
+        topPanel.setLayout(new GridLayout(9, 1, 5, 5));
         topPanel.setBackground(new Color(220, 220, 220));
         topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
 
@@ -61,15 +69,23 @@ public class ControlPanel extends JPanel {
         fastForwardButton = new JButton("Speed: 1x (OFF)");
         fastForwardButton.addActionListener(e -> game.toggleGameSpeed());
 
+        airstrikeButton = new JButton("Airstrike ($1000)");
+        airstrikeButton.addActionListener(e -> game.airstrike());
+
+        freezeButton = new JButton("Freeze ($500)");
+        freezeButton.addActionListener(e -> game.freeze());
+
         topPanel.add(new JLabel("--- STATUS ---"));
         topPanel.add(livesLabel);
         topPanel.add(moneyLabel);
         topPanel.add(waveLabel);
         topPanel.add(startWaveButton);
         topPanel.add(fastForwardButton);
+        topPanel.add(airstrikeButton);
+        topPanel.add(freezeButton);
 
         JPanel buildPanel = new JPanel();
-        buildPanel.setLayout(new GridLayout(14, 1, 5, 5));
+        buildPanel.setLayout(new GridLayout(18, 1, 5, 5));
         buildPanel.setBackground(new Color(220, 220, 220));
 
         buildBasicTowerButton = new JButton("TURRET ($" + BasicTower.COST + ")");
@@ -102,6 +118,18 @@ public class ControlPanel extends JPanel {
         buildBeaconTowerButton = new JButton("BEACON ($" + BeaconTower.COST + ")");
         buildBeaconTowerButton.addActionListener(e -> { if (game.playerMoney >= BeaconTower.COST) { game.placingTowerType = TowerDefence.BEACON; toggleBuildButtons(false); } });
 
+        buildGamblerTowerButton = new JButton("GAMBLER ($" + GamblerTower.COST + ")");
+        buildGamblerTowerButton.addActionListener(e -> { if (game.playerMoney >= GamblerTower.COST) { game.placingTowerType = TowerDefence.GAMBLER; toggleBuildButtons(false); } });
+
+        buildDetectorTowerButton = new JButton("DETECTOR ($" + DetectorTower.COST + ")");
+        buildDetectorTowerButton.addActionListener(e -> { if (game.playerMoney >= DetectorTower.COST) { game.placingTowerType = TowerDefence.DETECTOR; toggleBuildButtons(false); } });
+
+        buildChainLightningTowerButton = new JButton("CHAIN LIGHTNING ($" + ChainLightningTower.COST + ")");
+        buildChainLightningTowerButton.addActionListener(e -> { if (game.playerMoney >= ChainLightningTower.COST) { game.placingTowerType = TowerDefence.CHAIN_LIGHTNING; toggleBuildButtons(false); } });
+
+        buildConverterTowerButton = new JButton("CONVERTER ($" + ConverterTower.COST + ")");
+        buildConverterTowerButton.addActionListener(e -> { if (game.playerMoney >= ConverterTower.COST) { game.placingTowerType = TowerDefence.CONVERTER; toggleBuildButtons(false); } });
+
         cancelBuildButton = new JButton("Cancel Build");
         cancelBuildButton.addActionListener(e -> resetButtons());
         cancelBuildButton.setEnabled(false);
@@ -117,6 +145,10 @@ public class ControlPanel extends JPanel {
         buildPanel.add(buildSlowTowerButton);
         buildPanel.add(buildFarmTowerButton);
         buildPanel.add(buildBeaconTowerButton);
+        buildPanel.add(buildGamblerTowerButton);
+        buildPanel.add(buildDetectorTowerButton);
+        buildPanel.add(buildChainLightningTowerButton);
+        buildPanel.add(buildConverterTowerButton);
         buildPanel.add(cancelBuildButton);
 
         towerDetailPanel = new JPanel();
@@ -127,12 +159,18 @@ public class ControlPanel extends JPanel {
 
         detailNameLabel = new JLabel("Tower: ");
         detailNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        detailLevelLabel = new JLabel("Level: ");
+        detailLevelLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         detailSellLabel = new JLabel("Sell for: ");
         detailSellLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         sellButton = new JButton("SELL");
         sellButton.addActionListener(e -> sellSelectedTower());
         sellButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        upgradeButton = new JButton("UPGRADE");
+        upgradeButton.addActionListener(e -> upgradeSelectedTower());
+        upgradeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         targetingDropdown = new JComboBox<>(new String[]{TowerDefence.NEAREST, TowerDefence.FARTHEST, TowerDefence.STRONGEST});
         targetingDropdown.addActionListener(e -> changeTargetingMode());
@@ -141,11 +179,15 @@ public class ControlPanel extends JPanel {
         towerDetailPanel.add(Box.createVerticalStrut(10));
         towerDetailPanel.add(detailNameLabel);
         towerDetailPanel.add(Box.createVerticalStrut(10));
+        towerDetailPanel.add(detailLevelLabel);
+        towerDetailPanel.add(Box.createVerticalStrut(10));
         towerDetailPanel.add(new JLabel("Targeting Priority:"));
         towerDetailPanel.add(targetingDropdown);
         towerDetailPanel.add(Box.createVerticalStrut(10));
         towerDetailPanel.add(detailSellLabel);
         towerDetailPanel.add(sellButton);
+        towerDetailPanel.add(Box.createVerticalStrut(10));
+        towerDetailPanel.add(upgradeButton);
         towerDetailPanel.add(Box.createVerticalGlue());
 
         add(topPanel, BorderLayout.NORTH);
@@ -159,8 +201,16 @@ public class ControlPanel extends JPanel {
         int sellValue = (int) (tower.getCost() * 0.75);
 
         detailNameLabel.setText("Tower: " + tower.getClass().getSimpleName());
+        detailLevelLabel.setText("Level: " + tower.level);
         detailSellLabel.setText("Sell for: $" + sellValue);
         sellButton.setText("SELL ($" + sellValue + ")");
+
+        if (tower.upgradeCost > 0) {
+            upgradeButton.setText("UPGRADE ($" + tower.upgradeCost + ")");
+            upgradeButton.setVisible(true);
+        } else {
+            upgradeButton.setVisible(false);
+        }
 
         targetingDropdown.setSelectedItem(tower.getTargetingMode());
 
@@ -185,6 +235,18 @@ public class ControlPanel extends JPanel {
         }
     }
 
+    private void upgradeSelectedTower() {
+        if (game.selectedTower != null) {
+            if (game.playerMoney >= game.selectedTower.upgradeCost) {
+                game.playerMoney -= game.selectedTower.upgradeCost;
+                game.selectedTower.upgrade();
+                showTowerDetails(game.selectedTower);
+                updateLabels();
+                game.gamePanel.repaint();
+            }
+        }
+    }
+
     private void changeTargetingMode() {
         if (game.selectedTower != null && targetingDropdown.isEnabled()) {
             String mode = (String) targetingDropdown.getSelectedItem();
@@ -203,6 +265,10 @@ public class ControlPanel extends JPanel {
         buildSlowTowerButton.setEnabled(enableBuild);
         buildFarmTowerButton.setEnabled(enableBuild);
         buildBeaconTowerButton.setEnabled(enableBuild);
+        buildGamblerTowerButton.setEnabled(enableBuild);
+        buildDetectorTowerButton.setEnabled(enableBuild);
+        buildChainLightningTowerButton.setEnabled(enableBuild);
+        buildConverterTowerButton.setEnabled(enableBuild);
         cancelBuildButton.setEnabled(!enableBuild);
     }
 

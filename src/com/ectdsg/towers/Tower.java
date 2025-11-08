@@ -2,11 +2,13 @@ package com.ectdsg.towers;
 
 import com.ectdsg.TowerDefence;
 import com.ectdsg.enemies.Enemy;
+import com.ectdsg.enemies.GhostEnemy;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public abstract class Tower {
     public int x, y;
@@ -17,6 +19,8 @@ public abstract class Tower {
     protected Color color;
     protected Color attackColor;
     protected int cost;
+    public int level;
+    public int upgradeCost;
 
     private String targetingMode = TowerDefence.NEAREST;
 
@@ -29,6 +33,7 @@ public abstract class Tower {
         this.x = x;
         this.y = y;
         this.game = game;
+        this.level = 1;
     }
 
     public void setTargetingMode(String mode) {
@@ -97,7 +102,25 @@ public abstract class Tower {
     protected Enemy findTarget() {
         List<Enemy> inRangeEnemies = game.enemies.stream()
             .filter(enemy -> !enemy.isDead() && Point2D.distance(enemy.getX(), enemy.getY(), x, y) <= this.range)
-            .toList();
+            .collect(Collectors.toList());
+
+        // Ghost enemy logic
+        boolean canSeeGhosts = this instanceof DetectorTower;
+        if (!canSeeGhosts) {
+            for (Tower t : game.towers) {
+                if (t instanceof DetectorTower) {
+                    if (Point2D.distance(x, y, t.x, t.y) <= t.range) {
+                        canSeeGhosts = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!canSeeGhosts) {
+            inRangeEnemies.removeIf(enemy -> enemy instanceof GhostEnemy && !((GhostEnemy) enemy).isVisible);
+        }
+
 
         if (inRangeEnemies.isEmpty()) {
             return null;
@@ -121,6 +144,10 @@ public abstract class Tower {
                 break;
         }
         return target.orElse(null);
+    }
+
+    public void upgrade() {
+        this.level++;
     }
 
     public abstract void draw(Graphics2D g2d);

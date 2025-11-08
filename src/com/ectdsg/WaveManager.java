@@ -52,6 +52,12 @@ public class WaveManager {
                         game.enemies.add(new RitualEnemy(game.path, baseHealth, baseSpeed));
                     } else if (rand < 0.5) {
                         game.enemies.add(new WarperEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.6) {
+                        game.enemies.add(new HealerEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.7) {
+                        game.enemies.add(new SplitterEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand < 0.8) {
+                        game.enemies.add(new GhostEnemy(game.path, baseHealth, baseSpeed));
                     } else {
                         game.enemies.add(new Enemy(game.path, baseHealth, baseSpeed, 10, "BASIC_ENEMY"));
                     }

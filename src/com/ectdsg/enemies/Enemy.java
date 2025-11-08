@@ -5,9 +5,9 @@ import java.awt.*;
 import java.awt.geom.Point2D;
 
 public class Enemy {
-    private Path path;
+    protected Path path;
     public int health;
-    protected double baseSpeed;
+    public double baseSpeed;
     public int bounty;
     protected Color color;
     protected String type;
@@ -16,14 +16,14 @@ public class Enemy {
 
     public int currentWaypoint = 0;
     private boolean reachedEnd = false;
-    protected int maxHealth;
+    public int maxHealth;
 
     public long slowEndTime = 0;
     private final long SLOW_DURATION = 1000;
 
     protected int damageReduction = 0;
-    protected int shieldHitsRemaining = 0;
-    protected long teleportTimer = 0;
+    public int shieldHitsRemaining = 0;
+    public long teleportTimer = 0;
     private final long TELEPORT_COOLDOWN = 10000;
 
     public Enemy(Path path, int health, double speed, int bounty, String type) {
@@ -45,6 +45,8 @@ public class Enemy {
             this.teleportTimer = TELEPORT_COOLDOWN;
         } else if (type.equals("BOSS")) {
             this.color = new Color(75, 0, 130);
+        } else if (type.equals("FRIENDLY_ENEMY")) {
+            this.color = new Color(0, 0, 255);
         } else {
             this.color = Color.RED;
         }
@@ -126,6 +128,9 @@ public class Enemy {
 
     public double getX() { return x; }
     public double getY() { return y; }
+
+    public void setX(double x) { this.x = x; }
+    public void setY(double y) { this.y = y; }
 
     public double getDistanceOnWaypoint() {
         if (currentWaypoint == 0) return 0;

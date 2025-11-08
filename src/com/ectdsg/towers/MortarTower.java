@@ -17,6 +17,7 @@ public class MortarTower extends Tower {
         this.color = Color.GRAY;
         this.attackColor = Color.BLACK;
         this.cost = COST;
+        this.upgradeCost = 600;
         setTargetingMode(TowerDefence.FARTHEST);
     }
 
@@ -59,5 +60,13 @@ public class MortarTower extends Tower {
             g2d.setColor(new Color(this.color.getRed(), this.color.getGreen(), this.color.getBlue(), 50));
             g2d.drawOval(x - this.range, y - this.range, this.range * 2, this.range * 2);
         }
+    }
+
+    @Override
+    public void upgrade() {
+        super.upgrade();
+        this.damage += 50;
+        this.fireRate -= 500;
+        this.upgradeCost *= 2;
     }
 }
