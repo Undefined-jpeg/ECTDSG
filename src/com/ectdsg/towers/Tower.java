@@ -23,6 +23,9 @@ public abstract class Tower {
     protected Enemy currentTarget = null;
     protected double currentAngle = 0.0;
 
+    private double slowFactor = 0.0;
+    private long slowEndTime = 0;
+
     protected TowerDefence game;
 
     public Tower(int x, int y, TowerDefence game) {
@@ -54,7 +57,15 @@ public abstract class Tower {
                 }
             }
         }
+        if (System.currentTimeMillis() < slowEndTime) {
+            multiplier *= (1.0 - slowFactor);
+        }
         return (long)(fireRate / multiplier);
+    }
+
+    public void applySlow(double slowFactor) {
+        this.slowFactor = slowFactor;
+        this.slowEndTime = System.currentTimeMillis() + 1000; // Slow for 1 second
     }
 
     public void attack() {

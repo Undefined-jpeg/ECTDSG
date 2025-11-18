@@ -7,12 +7,53 @@ import java.util.List;
 
 public class MortarProjectile extends Projectile {
     private final int aoeRange;
+    private final double startX, startY;
+    private final double targetX, targetY;
+    private final double duration;
+    private double elapsedTime = 0;
+    private final double arcHeight;
 
     public MortarProjectile(int x, int y, int damage, Enemy target, Color color, int aoeRange) {
         super(x, y, damage, target, color);
-        this.speed = 10.0;
+        this.speed = 10.0; // This is now more of a "travel time" factor than a "speed"
         this.aoeRange = aoeRange;
+        this.startX = x;
+        this.startY = y;
+
+        // Mortar projectiles should target the ground, not a moving enemy
+        this.targetX = target.getX();
+        this.targetY = target.getY();
+        this.target = null; // Set target to null so it doesn't follow the enemy
+
+        double distance = Point2D.distance(startX, startY, targetX, targetY);
+        this.duration = distance / (speed * 10); // Adjust duration calculation
+        this.arcHeight = Math.max(50, distance / 3); // Make the arc more pronounced
     }
+
+    @Override
+    public void move(double speedMultiplier) {
+        elapsedTime += 0.016 * speedMultiplier; // Assuming 60 FPS (1/60 ~= 0.016)
+
+        if (hasHitTarget()) {
+            this.x = targetX;
+            this.y = targetY;
+            return;
+        }
+
+        double t = elapsedTime / duration;
+        this.x = startX + (targetX - startX) * t;
+        double y_linear = startY + (targetY - startY) * t;
+
+        // Parabolic arc
+        double arc = -4 * arcHeight * t * (t - 1);
+        this.y = y_linear + arc;
+    }
+
+    @Override
+    public boolean hasHitTarget() {
+        return elapsedTime >= duration;
+    }
+
 
     public void applyExplosionDamage(List<Enemy> allEnemies) {
         double impactX = this.x;

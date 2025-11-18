@@ -41,6 +41,9 @@ public class TowerDefence extends JFrame {
     public static final String SLOW = "SLOW";
     public static final String FARM = "FARM";
     public static final String BEACON = "BEACON";
+    public static final String FIRE = "FIRE";
+    public static final String POISON = "POISON";
+    public static final String ICE = "ICE";
 
     public static final String BASIC_ENEMY = "BASIC_ENEMY";
     public static final String ARMORED_ENEMY = "ARMORED_ENEMY";
@@ -159,7 +162,7 @@ public class TowerDefence extends JFrame {
                 continue;
             }
 
-            if (p.target != null && p.target.isDead()) {
+            if (p.target != null && p.target.isDead() && !(p instanceof com.ectdsg.projectiles.MortarProjectile)) {
                  projectileIterator.remove();
                  continue;
             }
@@ -167,7 +170,7 @@ public class TowerDefence extends JFrame {
             if (p.hasHitTarget()) {
                 if (p instanceof com.ectdsg.projectiles.MortarProjectile) {
                     ((com.ectdsg.projectiles.MortarProjectile) p).applyExplosionDamage(enemies);
-                } else {
+                } else if (p.target != null) {
                     p.target.takeDamage(p.damage);
                 }
                 projectileIterator.remove();
