@@ -26,6 +26,9 @@ public class ControlPanel extends JPanel {
     private final JButton buildSlowTowerButton;
     private final JButton buildFarmTowerButton;
     private final JButton buildBeaconTowerButton;
+    private final JButton buildFireTowerButton;
+    private final JButton buildPoisonTowerButton;
+    private final JButton buildIceTowerButton;
     private JButton cancelBuildButton;
 
     private JPanel towerDetailPanel;
@@ -112,6 +115,18 @@ public class ControlPanel extends JPanel {
         buildBeaconTowerButton.setForeground(Color.BLUE);
         buildBeaconTowerButton.addActionListener(e -> { if (game.playerMoney >= BeaconTower.COST) { game.placingTowerType = TowerDefence.BEACON; toggleBuildButtons(false); } });
 
+        buildFireTowerButton = new JButton("FIRE TOWER ($" + FireTower.COST + ")");
+        buildFireTowerButton.setForeground(Color.RED);
+        buildFireTowerButton.addActionListener(e -> { if (game.playerMoney >= FireTower.COST) { game.placingTowerType = TowerDefence.FIRE; toggleBuildButtons(false); } });
+
+        buildPoisonTowerButton = new JButton("POISON TOWER ($" + PoisonTower.COST + ")");
+        buildPoisonTowerButton.setForeground(Color.GREEN);
+        buildPoisonTowerButton.addActionListener(e -> { if (game.playerMoney >= PoisonTower.COST) { game.placingTowerType = TowerDefence.POISON; toggleBuildButtons(false); } });
+
+        buildIceTowerButton = new JButton("ICE TOWER ($" + IceTower.COST + ")");
+        buildIceTowerButton.setForeground(Color.CYAN);
+        buildIceTowerButton.addActionListener(e -> { if (game.playerMoney >= IceTower.COST) { game.placingTowerType = TowerDefence.ICE; toggleBuildButtons(false); } });
+
         cancelBuildButton = new JButton("Cancel Build");
         cancelBuildButton.addActionListener(e -> resetButtons());
         cancelBuildButton.setEnabled(false);
@@ -127,6 +142,9 @@ public class ControlPanel extends JPanel {
         buildPanel.add(buildSlowTowerButton);
         buildPanel.add(buildFarmTowerButton);
         buildPanel.add(buildBeaconTowerButton);
+        buildPanel.add(buildFireTowerButton);
+        buildPanel.add(buildPoisonTowerButton);
+        buildPanel.add(buildIceTowerButton);
         buildPanel.add(cancelBuildButton);
 
         towerDetailPanel = new JPanel();
@@ -213,6 +231,9 @@ public class ControlPanel extends JPanel {
         buildSlowTowerButton.setEnabled(enableBuild);
         buildFarmTowerButton.setEnabled(enableBuild);
         buildBeaconTowerButton.setEnabled(enableBuild);
+        buildFireTowerButton.setEnabled(enableBuild);
+        buildPoisonTowerButton.setEnabled(enableBuild);
+        buildIceTowerButton.setEnabled(enableBuild);
         cancelBuildButton.setEnabled(!enableBuild);
     }
 

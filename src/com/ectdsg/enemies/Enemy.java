@@ -1,10 +1,26 @@
 package com.ectdsg.enemies;
 
 import com.ectdsg.Path;
+import com.ectdsg.TowerDefence;
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Enemy {
+    private static class DamageOverTime {
+        int damagePerSecond;
+        long endTime;
+        long nextDamageTime;
+
+        DamageOverTime(int damagePerSecond, int durationInSeconds) {
+            this.damagePerSecond = damagePerSecond;
+            this.endTime = System.currentTimeMillis() + durationInSeconds * 1000;
+            this.nextDamageTime = System.currentTimeMillis() + 1000;
+        }
+    }
+    protected TowerDefence game;
     private Path path;
     public int health;
     protected double baseSpeed;
@@ -20,13 +36,16 @@ public class Enemy {
 
     public long slowEndTime = 0;
     private final long SLOW_DURATION = 1500;
+    public long freezeEndTime = 0;
 
     protected int damageReduction = 0;
     protected int shieldHitsRemaining = 0;
     protected long teleportTimer = 0;
     private final long TELEPORT_COOLDOWN = 1000;
+    private List<DamageOverTime> dotEffects = new ArrayList<>();
 
-    public Enemy(Path path, int health, double speed, int bounty, String type) {
+    public Enemy(TowerDefence game, Path path, int health, double speed, int bounty, String type) {
+        this.game = game;
         this.path = path;
         this.type = type;
         this.maxHealth = health;
@@ -82,11 +101,27 @@ public class Enemy {
     public void move(double speedMultiplier) {
         if (reachedEnd) return;
 
+        if (System.currentTimeMillis() < freezeEndTime) {
+            return; // Enemy is frozen
+        }
+
         double actualSpeed = baseSpeed;
         if (System.currentTimeMillis() < slowEndTime) {
             actualSpeed *= 0.5;
         }
         actualSpeed *= speedMultiplier;
+
+        long currentTime = System.currentTimeMillis();
+        Iterator<DamageOverTime> dotIterator = dotEffects.iterator();
+        while (dotIterator.hasNext()) {
+            DamageOverTime dot = dotIterator.next();
+            if (currentTime >= dot.endTime) {
+                dotIterator.remove();
+            } else if (currentTime >= dot.nextDamageTime) {
+                takeDamage(dot.damagePerSecond);
+                dot.nextDamageTime += 1000;
+            }
+        }
 
         if (this.type.equals("TELEPORTER_ENEMY")) {
             this.teleportTimer -= (long)(16 * speedMultiplier);
@@ -143,8 +178,16 @@ public class Enemy {
         health -= finalDamage;
     }
 
+    public void applyDamageOverTime(int damagePerSecond, int durationInSeconds) {
+        dotEffects.add(new DamageOverTime(damagePerSecond, durationInSeconds));
+    }
+
     public void applySlow() {
         this.slowEndTime = System.currentTimeMillis() + SLOW_DURATION;
+    }
+
+    public void applyFreeze(long duration) {
+        this.freezeEndTime = System.currentTimeMillis() + duration;
     }
 
     public boolean isDead() {

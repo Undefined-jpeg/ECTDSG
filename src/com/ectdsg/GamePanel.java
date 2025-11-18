@@ -57,6 +57,9 @@ public class GamePanel extends JPanel {
             case TowerDefence.SLOW -> { newTower = new SlowTower(x, y, game); cost = SlowTower.COST; }
             case TowerDefence.FARM -> { newTower = new MoneyFarm(x, y, game); cost = MoneyFarm.COST; }
             case TowerDefence.BEACON -> { newTower = new BeaconTower(x, y, game); cost = BeaconTower.COST; }
+            case TowerDefence.FIRE -> { newTower = new FireTower(x, y, game); cost = FireTower.COST; }
+            case TowerDefence.POISON -> { newTower = new PoisonTower(x, y, game); cost = PoisonTower.COST; }
+            case TowerDefence.ICE -> { newTower = new IceTower(x, y, game); cost = IceTower.COST; }
         }
 
         if (newTower != null) {
@@ -175,6 +178,9 @@ public class GamePanel extends JPanel {
                     case TowerDefence.SLOW -> { previewRange = SlowTower.RANGE; previewColor = Color.MAGENTA; towerCost = SlowTower.COST; }
                     case TowerDefence.FARM -> { previewRange = MoneyFarm.RANGE; previewColor = Color.YELLOW; towerCost = MoneyFarm.COST; }
                     case TowerDefence.BEACON -> { previewRange = BeaconTower.RANGE; previewColor = Color.MAGENTA; towerCost = BeaconTower.COST; }
+                    case TowerDefence.FIRE -> { previewRange = FireTower.RANGE; previewColor = Color.RED; towerCost = FireTower.COST; }
+                    case TowerDefence.POISON -> { previewRange = PoisonTower.RANGE; previewColor = Color.GREEN; towerCost = PoisonTower.COST; }
+                    case TowerDefence.ICE -> { previewRange = IceTower.RANGE; previewColor = Color.CYAN; towerCost = IceTower.COST; }
                 }
 
                 boolean isValid = isLocationValid(mousePos.x, mousePos.y) && game.playerMoney >= towerCost;

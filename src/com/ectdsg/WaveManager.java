@@ -24,7 +24,24 @@ public class WaveManager {
         game.controlPanel.updateLabels();
 
         if (game.waveNumber % TowerDefence.BOSS_WAVE_FREQUENCY == 0) {
-            game.enemies.add(new BossEnemy(game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+            int bossType = (game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY) % 5;
+            switch (bossType) {
+                case 0:
+                    game.enemies.add(new com.ectdsg.enemies.TerryBoss(game, game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+                    break;
+                case 1:
+                    game.enemies.add(new com.ectdsg.enemies.ExtraterrestrialBoss(game, game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+                    break;
+                case 2:
+                    game.enemies.add(new com.ectdsg.enemies.BruteBoss(game, game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+                    break;
+                case 3:
+                    game.enemies.add(new com.ectdsg.enemies.GuardianBoss(game, game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+                    break;
+                case 4:
+                    game.enemies.add(new com.ectdsg.enemies.SlowingBoss(game, game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+                    break;
+            }
 
             game.controlPanel.waveTimer = new Timer(1, null);
             game.controlPanel.waveTimer.setRepeats(false);
@@ -62,7 +79,7 @@ public class WaveManager {
                          speed = baseSpeed * 1.5;
                          bounty = 20;
                     }
-                    game.enemies.add(new Enemy(game.path, health, speed, bounty, type));
+                    game.enemies.add(new Enemy(game, game.path, health, speed, bounty, type));
                     spawned++;
                 } else {
                     game.controlPanel.waveTimer.stop();
