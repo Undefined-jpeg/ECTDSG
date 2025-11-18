@@ -1,0 +1,103 @@
+package com.ectdsg;
+
+import javax.swing.Timer;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import com.ectdsg.enemies.*;
+
+
+public class WaveManager {
+
+    private TowerDefence game;
+
+    public WaveManager(TowerDefence game) {
+        this.game = game;
+    }
+
+    public void spawnWave() {
+        game.controlPanel.hideTowerDetails();
+        game.selectedTower = null;
+
+        game.waveNumber++;
+        game.controlPanel.waveInProgress = true;
+        game.controlPanel.startWaveButton.setEnabled(false);
+        game.controlPanel.updateLabels();
+
+        if (game.waveNumber % TowerDefence.BOSS_WAVE_FREQUENCY == 0) {
+            game.enemies.add(new TerryBoss(game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+
+            game.controlPanel.waveTimer = new Timer(1, null);
+            game.controlPanel.waveTimer.setRepeats(false);
+            game.controlPanel.waveTimer.start();
+            return;
+        }
+        else if (game.waveNumber == 125) {
+            game.enemies.add(new BruteBoss(game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+
+            game.controlPanel.waveTimer = new Timer(1, null);
+            game.controlPanel.waveTimer.setRepeats(false);
+            game.controlPanel.waveTimer.start();
+            return;
+        }
+        else if (game.waveNumber == 150) {
+            game.enemies.add(new GuardianBoss(game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+
+            game.controlPanel.waveTimer = new Timer(1, null);
+            game.controlPanel.waveTimer.setRepeats(false);
+            game.controlPanel.waveTimer.start();
+            return;
+        }
+        else if (game.waveNumber == 175) {
+            game.enemies.add(new ExtraterrestrialBoss(game.path, game.waveNumber / TowerDefence.BOSS_WAVE_FREQUENCY));
+
+            game.controlPanel.waveTimer = new Timer(1, null);
+            game.controlPanel.waveTimer.setRepeats(false);
+            game.controlPanel.waveTimer.start();
+            return;
+        }
+
+        final int enemiesToSpawn = 3 + game.waveNumber * 2;
+        final int baseHealth = 100 + game.waveNumber * 15;
+        final double baseSpeed = 1.0 + (game.waveNumber * 0.05);
+
+        game.controlPanel.waveTimer = new Timer((int) (500 / game.GAME_SPEED_MULTIPLIER), null);
+        game.controlPanel.waveTimer.addActionListener(new ActionListener() {
+            int spawned = 0;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (spawned < enemiesToSpawn) {
+                    double rand = Math.random();
+                    if (rand > 0.1) {
+                        game.enemies.add(new ArmoredEnemy(game.path, baseHealth, baseSpeed));
+                        game.enemies.add(new ShieldedEnemy(game.path, baseHealth, baseSpeed));
+                        
+                    } else if (rand > 0.2) {
+                        game.enemies.add(new TeleporterEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.3) {
+                        game.enemies.add(new TankedEnemy(game.path, baseHealth, baseSpeed));
+                        game.enemies.add(new ProtectedEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.4) {
+                        game.enemies.add(new WarperEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.5) {
+                        game.enemies.add(new RiotEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.6) {
+                        game.enemies.add(new RitualEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.7) {
+                        game.enemies.add(new TerestialEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.8) {
+                        game.enemies.add(new HealerEnemy(game.path, baseHealth, baseSpeed));
+                    } else if (rand > 0.9) {
+                        game.enemies.add(new GhostEnemy(game.path, baseHealth, baseSpeed));
+                    }
+                     else {
+                        game.enemies.add(new Enemy(game.path, baseHealth, baseSpeed, 10, "BASIC_ENEMY"));
+                    }
+                    spawned++;
+                } else {
+                    game.controlPanel.waveTimer.stop();
+                }
+            }
+        });
+        game.controlPanel.waveTimer.start();
+    }
+}
